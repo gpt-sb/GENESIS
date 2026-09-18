@@ -1,0 +1,56 @@
+{
+  "method": "ECFP4 k-NN (no learning)",
+  "results": {
+    "vp_retrieval": {
+      "pool_size": 143925,
+      "vp_targets": 3669,
+      "vp_recall_100": 0.02725538293813028,
+      "vp_ef_100": 39.227309893704,
+      "vp_recall_500": 0.1362769146906514,
+      "vp_ef_500": 39.22730989370401,
+      "vp_recall_1000": 0.2725538293813028,
+      "vp_ef_1000": 39.22730989370401
+    },
+    "potency_spearman": {
+      "global_spearman_rho": 0.5420709368457514,
+      "global_spearman_p": 0.0,
+      "n": 7362
+    },
+    "cliff_accuracy": {
+      "cliff_accuracy": 0.3750869867780097,
+      "cliff_pairs_tested": 7185
+    },
+    "ndcg": {
+      "ndcg_100": 1.0000000000000004,
+      "ndcg_500": 0.9999999999999998,
+      "ndcg_1000": 1.0000000000000007
+    }
+  },
+  "pgcl_reference": {
+    "vp_recall_100": {
+      "mean": 0.026,
+      "std": 0.0005
+    },
+    "vp_recall_500": {
+      "mean": 0.1247,
+      "std": 0.0018
+    },
+    "global_spearman_rho": {
+      "mean": 0.5553,
+      "std": 0.0028
+    },
+    "cliff_accuracy": {
+      "mean": 0.6638,
+      "std": 0.0034
+    },
+    "target_switch_auc_roc": {
+      "mean": 0.9668,
+      "std": 0.0012
+    },
+    "ndcg_100": {
+      "mean": 0.941,
+      "std": 0.0248
+    }
+  },
+  "n_vp_refs": 1000
+}

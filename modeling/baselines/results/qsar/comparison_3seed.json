@@ -1,0 +1,55 @@
+{
+  "method_a": "PGCL (Ordinal SupCon) [ours] -- 3-seed mean (42/123/456)",
+  "method_b": "QSAR (RF/XGB/LR on ECFP4) [baseline] -- 3-seed mean (42/123/456)",
+  "metrics": {
+    "Potency Spearman \u03c1": {
+      "PGCL_mean": 0.555279878244571,
+      "PGCL_std": 0.0028165511737996193,
+      "rf_mean": 0.7873535076604821,
+      "rf_std": 0.0005586050716691809,
+      "rf_delta": 0.23207362941591103,
+      "rf_PGCL_wins": false,
+      "xgb_mean": 0.7351046790231989,
+      "xgb_std": 0.0,
+      "xgb_delta": 0.17982480077862784,
+      "xgb_PGCL_wins": false
+    },
+    "Binary AUROC": {
+      "PGCL_mean": 0.9667950447847516,
+      "PGCL_std": 0.0012405972163385362,
+      "rf_mean": 0.9099694847463216,
+      "rf_std": 0.0007189066389851133,
+      "rf_delta": -0.05682556003843009,
+      "rf_PGCL_wins": true,
+      "xgb_mean": 0.880624153435481,
+      "xgb_std": 0.0,
+      "xgb_delta": -0.0861708913492707,
+      "xgb_PGCL_wins": true,
+      "lr_mean": 0.8564264953024135,
+      "lr_std": 1.1102230246251565e-16,
+      "lr_delta": -0.1103685494823381,
+      "lr_PGCL_wins": true
+    },
+    "VP Recall@100": {
+      "PGCL_mean": 0.025983465067684203,
+      "PGCL_std": 0.0004632524315065665,
+      "rf_mean": 0.026256018897065508,
+      "rf_std": 0.0004632524315065665,
+      "rf_delta": 0.000272553829381305,
+      "rf_PGCL_wins": false,
+      "xgb_mean": 0.02507495230307986,
+      "xgb_std": 3.469446951953614e-18,
+      "xgb_delta": -0.0009085127646043419,
+      "xgb_PGCL_wins": true,
+      "lr_mean": 0.026710275279367673,
+      "lr_std": 0.0,
+      "lr_delta": 0.0007268102116834707,
+      "lr_PGCL_wins": false
+    }
+  },
+  "summary": {
+    "rf": "PGCL wins 1/3 metrics",
+    "xgb": "PGCL wins 2/3 metrics",
+    "lr": "PGCL wins 1/3 metrics"
+  }
+}

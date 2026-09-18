@@ -1,0 +1,32 @@
+# GENESIS – Generative Network-pharmacology Exploration for OSCC
+# Core dependencies (pinned to tested versions)
+
+# Deep learning
+torch>=2.4.0
+transformers>=4.40.0
+
+# Chemistry / Cheminformatics
+rdkit>=2024.3.1
+selfies>=2.2.0
+
+# Molecular dynamics & docking
+MDAnalysis>=2.10.0
+openmm>=8.5.0
+pdbfixer>=1.12.0
+
+# Data science
+numpy>=2.0.0
+pandas>=3.0.0
+scipy>=1.13.0
+scikit-learn>=1.5.0
+
+# Visualization
+matplotlib>=3.9.0
+seaborn>=0.13.0
+networkx>=3.3
+
+# Dimensionality reduction
+umap-learn>=0.5.6
+
+# Utilities
+requests>=2.31.0

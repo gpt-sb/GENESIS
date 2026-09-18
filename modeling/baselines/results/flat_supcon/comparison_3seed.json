@@ -1,0 +1,52 @@
+{
+  "method_a": "PGCL (Ordinal SupCon) [ours] -- 3-seed mean (42/123/456)",
+  "method_b": "Standard SupCon (flat weights) [baseline] -- 3-seed mean (42/123/456)",
+  "metrics": {
+    "VP Recall@100": {
+      "PGCL_mean": 0.025983465067684203,
+      "PGCL_std": 0.0004632524315065665,
+      "FlatSupCon_mean": 0.025710911238302898,
+      "FlatSupCon_std": 0.0008993817513047741,
+      "delta": -0.000272553829381305,
+      "pct_change": -1.0489510489106875,
+      "PGCL_wins": true
+    },
+    "Potency Spearman \u03c1": {
+      "PGCL_mean": 0.555279878244571,
+      "PGCL_std": 0.0028165511737996193,
+      "FlatSupCon_mean": 0.519427590576233,
+      "FlatSupCon_std": 0.004946258029614149,
+      "delta": -0.035852287668338034,
+      "pct_change": -6.456615676695286,
+      "PGCL_wins": true
+    },
+    "Cliff Pair Accuracy": {
+      "PGCL_mean": 0.663801090211794,
+      "PGCL_std": 0.0034008078091147835,
+      "FlatSupCon_mean": 0.6631116282076143,
+      "FlatSupCon_std": 0.005913731982171784,
+      "delta": -0.0006894620041797417,
+      "pct_change": -0.1038657535134089,
+      "PGCL_wins": true
+    },
+    "Target-Switch AUROC": {
+      "PGCL_mean": 0.9667950447847516,
+      "PGCL_std": 0.0012405972163385362,
+      "FlatSupCon_mean": 0.9683524299536268,
+      "FlatSupCon_std": 0.0017821061754943167,
+      "delta": 0.0015573851688751583,
+      "pct_change": 0.16108741736675797,
+      "PGCL_wins": false
+    },
+    "NDCG@100 (potency)": {
+      "PGCL_mean": 0.9410004597832637,
+      "PGCL_std": 0.024847944387783327,
+      "FlatSupCon_mean": 0.93068750843452,
+      "FlatSupCon_std": 0.03129233488046718,
+      "delta": -0.01031295134874377,
+      "pct_change": -1.0959560371636954,
+      "PGCL_wins": true
+    }
+  },
+  "summary": "PGCL wins 4/5 metrics"
+}

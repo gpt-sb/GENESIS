@@ -1,0 +1,36 @@
+{
+  "n_input_compounds": 71866,
+  "n_valid_selfies": 71861,
+  "n_failed": 5,
+  "success_rate": 0.9999304260707428,
+  "vocab_size": 157,
+  "max_len": 128,
+  "length_stats": {
+    "min": 1,
+    "max": 914,
+    "mean": 54.5120162536007,
+    "median": 53,
+    "p90": 75,
+    "p95": 83,
+    "p99": 122,
+    "p99.5": 170
+  },
+  "split_counts": {
+    "train": 34406,
+    "val": 7383,
+    "test": 7368,
+    "unused": 22704
+  },
+  "potency_distribution": {
+    "3.0": 24991,
+    "1.0": 12320,
+    "2.0": 12001
+  },
+  "n_truncated": 661,
+  "special_tokens": [
+    "[PAD]",
+    "[BOS]",
+    "[EOS]",
+    "[UNK]"
+  ]
+}

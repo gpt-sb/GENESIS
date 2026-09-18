@@ -1,0 +1,70 @@
+{
+  "experiment": "C1_target_based",
+  "luad_targets": [
+    "EGFR",
+    "ALK",
+    "KRAS",
+    "RET",
+    "MET",
+    "ERBB2",
+    "HER2",
+    "PIK3CA",
+    "BRAF",
+    "STK11",
+    "NTRK1",
+    "NTRK2",
+    "ROS1",
+    "NF1",
+    "MTOR",
+    "AKT1"
+  ],
+  "n_total": 52373,
+  "n_in_index": 29675,
+  "pchembl_range": [
+    5.0,
+    17.299988937677888
+  ],
+  "pgcl": {
+    "spearman_rho": 0.5022067382542487,
+    "p_value": 0.0
+  },
+  "ecfp4": {
+    "spearman_rho": 0.3898135783512023,
+    "p_value": 0.0
+  },
+  "oscc_internal": {
+    "spearman_rho": 0.74,
+    "sd": 0.03
+  },
+  "per_target_rho": {
+    "EGFR": {
+      "rho": 0.5611446285632729,
+      "p": 0.0,
+      "n": 11886,
+      "ci_lo": 0.5474464383897075,
+      "ci_hi": 0.5741235572342208
+    },
+    "PIK3CA": {
+      "rho": 0.6880334912015719,
+      "p": 0.0,
+      "n": 9009,
+      "ci_lo": 0.6754073677993914,
+      "ci_hi": 0.7005719287598285
+    },
+    "ALK": {
+      "rho": 0.22498043521054542,
+      "p": 3.2235573215728285e-08,
+      "n": 591,
+      "ci_lo": 0.14493725869883692,
+      "ci_hi": 0.3037634237168618
+    },
+    "KRAS": {
+      "rho": 0.07550778048004878,
+      "p": 0.2448851688477896,
+      "n": 239,
+      "ci_lo": -0.05330863325855197,
+      "ci_hi": 0.2047795676266736
+    }
+  },
+  "interpretation": "SUBSTANTIAL TRANSFER (pan-cancer potency geometry)"
+}

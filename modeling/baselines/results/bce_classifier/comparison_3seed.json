@@ -1,0 +1,52 @@
+{
+  "method_a": "PGCL (Ordinal SupCon) [ours] -- 3-seed mean (42/123/456)",
+  "method_b": "BCE Classifier (VP vs. rest) [baseline] -- 3-seed mean (42/123/456)",
+  "metrics": {
+    "VP Recall@100": {
+      "PGCL_mean": 0.025983465067684203,
+      "PGCL_std": 0.0004632524315065665,
+      "BCE_mean": 0.026437721449986375,
+      "BCE_std": 0.0005887835648594402,
+      "delta": 0.00045425638230217266,
+      "pct_change": 1.7482517481844702,
+      "PGCL_wins": false
+    },
+    "Potency Spearman \u03c1": {
+      "PGCL_mean": 0.555279878244571,
+      "PGCL_std": 0.0028165511737996193,
+      "BCE_mean": 0.37217396179328793,
+      "BCE_std": 0.012627513748249674,
+      "delta": -0.1831059164512831,
+      "pct_change": -32.97542800034706,
+      "PGCL_wins": true
+    },
+    "Cliff Pair Accuracy": {
+      "PGCL_mean": 0.663801090211794,
+      "PGCL_std": 0.0034008078091147835,
+      "BCE_mean": 0.5718010040290435,
+      "BCE_std": 0.015351933674687311,
+      "delta": -0.09200008618275046,
+      "pct_change": -13.859586484447938,
+      "PGCL_wins": true
+    },
+    "Target-Switch AUROC": {
+      "PGCL_mean": 0.9667950447847516,
+      "PGCL_std": 0.0012405972163385362,
+      "BCE_mean": 0.8694105363113455,
+      "BCE_std": 0.013138144427638969,
+      "delta": -0.09738450847340618,
+      "pct_change": -10.072921763369946,
+      "PGCL_wins": true
+    },
+    "NDCG@100 (potency)": {
+      "PGCL_mean": 0.9410004597832637,
+      "PGCL_std": 0.024847944387783327,
+      "BCE_mean": 0.849561706003929,
+      "BCE_std": 0.02126911846306623,
+      "delta": -0.09143875377933475,
+      "pct_change": -9.717184814160264,
+      "PGCL_wins": true
+    }
+  },
+  "summary": "PGCL wins 4/5 metrics"
+}

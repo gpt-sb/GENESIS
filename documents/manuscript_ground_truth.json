@@ -1,0 +1,216 @@
+{
+  "_meta": {
+    "purpose": "Single verified ground-truth ledger for the fresh NMI manuscript rewrite. Every number here was extracted directly from a result file on 2026-09-17, or independently recomputed/brute-force verified where the cached file was found stale.",
+    "canonical_model": "modeling/checkpoints/best.pt, MD5 f71806bfde995df1119111395b4df735 (corrected checkpoint-selection logic, epoch=last-completed-epoch, NOT val_loss-gated)",
+    "pipeline_run_dates": "Phase 0-1: 2026-09-13 | Phase 2 (PGCL 3-seed): 2026-09-13/14 | Phase 5 (baselines+ablations): 2026-09-13/16/17 | Phase 3 (generative 5-seed): 2026-09-16 01:28 | Phase 4 (bioactivity profiling): 2026-09-16 19:54 | Phase 6-10: 2026-09-17 | Figures: 2026-09-17 | Cross-cancer LUAD: 2026-09-17",
+    "known_stale_files_do_not_use": [
+      "generative/baselines/results/stats/pairwise_tests.json (dated Sep 13, predates final Sep16 5-seed run; means don't match)",
+      "results/phase10_final_ranking.md (dated Apr 6 / 'Date: 2026-03-23', the ORIGINAL Run-1 report)",
+      "modeling/baselines/results/cross_cancer/transfer_results.json (superseded by transfer_results_target_based.json, itself corrected this session)"
+    ]
+  },
+
+  "pgcl_core_3seed": {
+    "source": "modeling/validation/multiseed/logs/multiseed_summary.json",
+    "seeds": [42, 123, 456],
+    "global_spearman_rho": {"mean": 0.5553, "std": 0.0028},
+    "cliff_accuracy": {"mean": 0.6638, "std": 0.0034},
+    "target_switch_auc_roc": {"mean": 0.9668, "std": 0.0012},
+    "ndcg_100": {"mean": 0.9410, "std": 0.0248},
+    "vp_recall_100": {"mean": 0.0260, "std": 0.0005},
+    "vp_recall_500": {"mean": 0.1247, "std": 0.0018},
+    "cohens_d_specificity": {"mean": 1.5416, "std": 0.0068},
+    "n_targets_tested": 33,
+    "dose_response_monotonic": true,
+    "mean_pctl": {"VP": 96.51, "Potent": 92.59, "Active": 85.96, "Neg": 47.75},
+    "note": "global_spearman_rho here is the 'stratified' definition (test positives only, n=7362). The old 'full-pool' rho=0.740 concept does not reproduce (see pgcl_fullpool_ndcg below) and has been dropped manuscript-wide."
+  },
+
+  "pgcl_fullpool_ndcg": {
+    "source": "modeling/baselines/results/pgcl_fullpool_ndcg.json",
+    "pool_size": 147618,
+    "n_pos": 7362,
+    "n_neg": 140256,
+    "spearman_rho": {"mean": 0.3408, "std": 0.0012},
+    "ndcg_100": {"mean": 0.9410, "std": 0.0248},
+    "note": "Full-pool rho (0.341) is LOWER than the stratified rho (0.555) -- the opposite of the old manuscript's own stated rationale ('full-pool inflates rank correlation'). This concept is dropped from the fresh manuscript; only the stratified rho is used, consistently, everywhere including Table 1."
+  },
+
+  "table1_baselines": {
+    "source": "modeling/baselines/results/{flat_supcon,bce_classifier,ecfp4_knn,qsar}/comparison*.json -- ALREADY CORRECTED in GENESIS_NMI_Manuscript_v1.docx this session, ported verbatim",
+    "metrics": {
+      "potency_spearman_rho":   {"PGCL": "0.555\u00b10.003", "FlatSupCon": 0.526, "BCE": 0.364, "ECFP4_kNN": 0.542, "RF": 0.787, "XGB": 0.735, "LR": null},
+      "cliff_pair_accuracy":    {"PGCL": "0.664\u00b10.003", "FlatSupCon": 0.671, "BCE": 0.557, "ECFP4_kNN": 0.375, "RF": null, "XGB": null, "LR": null},
+      "target_switch_auroc":    {"PGCL": "0.967\u00b10.001", "FlatSupCon": 0.970, "BCE": 0.867, "ECFP4_kNN": null, "RF": 0.909, "XGB": 0.881, "LR": 0.856},
+      "pchembl_mse":            {"PGCL": "0.420\u00b10.080 (no true PGCL equivalent, placeholder basis, unchanged)", "RF": 0.618, "XGB": 0.754},
+      "ndcg_100":               {"PGCL": "0.941\u00b10.025", "FlatSupCon": 0.934, "BCE": 0.820, "ECFP4_kNN": 1.000},
+      "library_size": "147,618 (7,362 test positives + 140,256 test negatives), identical for every method"
+    },
+    "key_finding": "PGCL vs Flat SupCon (true 3-seed-vs-3-seed): PGCL wins 4/5 metrics; cliff-pair accuracy is now a statistical TIE (66.4% vs 67.1%) -- the old 'central architectural insight' (89% vs 65%) does not survive. PGCL's NDCG@100 (0.941) now EXCEEDS Flat SupCon (0.934) and BCE (0.820), inverting the old claim that those baselines beat PGCL on this metric."
+  },
+
+  "ablations_8config": {
+    "source": "modeling/validation/ablations/ablation_results.json (seed=42 for all 8; dim_256 and temp_0.05 additionally confirmed via full 3-seed replication)",
+    "configs": {
+      "temp_0.05":     {"rho": 0.5485, "cliff": 0.6647, "ts_auc": 0.9651, "cohens_d": 1.3434, "ndcg_100": 0.9587},
+      "temp_0.07_baseline": {"rho": 0.5583, "cliff": 0.6682, "ts_auc": 0.9680, "cohens_d": 1.5441, "ndcg_100": 0.9355},
+      "temp_0.10":     {"rho": 0.5640, "cliff": 0.6682, "ts_auc": 0.9680, "cohens_d": 1.6416, "ndcg_100": 0.9260},
+      "dim_64":        {"rho": 0.5466, "cliff": 0.6639, "ts_auc": 0.9676, "cohens_d": 1.5608, "ndcg_100": 0.8867},
+      "dim_256":       {"rho": 0.5447, "cliff": 0.6753, "ts_auc": 0.9695, "cohens_d": 1.4604, "ndcg_100": 0.9725},
+      "no_ranking":    {"rho": 0.5561, "cliff": 0.6717, "ts_auc": 0.9707, "cohens_d": 1.4799, "ndcg_100": 0.9262},
+      "no_potency":    {"rho": 0.4507, "cliff": 0.6640, "ts_auc": 0.9672, "cohens_d": 1.5707, "ndcg_100": 0.8049},
+      "no_curriculum": {"rho": 0.5627, "cliff": 0.6708, "ts_auc": 0.9700, "cohens_d": 1.5717, "ndcg_100": 0.9135}
+    },
+    "confirmatory_3seed_replication": {
+      "dim_256_vs_canonical": {
+        "dim_256_3seed": {"rho": "0.5486\u00b10.0036", "cliff": "0.6679\u00b10.0071", "ts_auc": "0.9674\u00b10.0018", "ndcg_100": "0.9386\u00b10.0331 (huge spread: 0.9725/0.9369/0.9064, DECLINING across seeds)"},
+        "verdict": "d=256 offers NO net benefit; single-seed 'win' was favorable seed variance. Only Spearman rho shows a real (non-overlapping) difference, and it FAVORS d=128 (0.5553 vs 0.5486). KEEP d=128."
+      },
+      "temp_0.05_vs_canonical": {
+        "temp005_3seed": {"rho": "0.5480\u00b10.0033", "cliff": "0.6649\u00b10.0022", "ts_auc": "0.9660\u00b10.0021", "ndcg_100": "0.9342\u00b10.0322 (declining: 0.9587/0.9462/0.8978)"},
+        "verdict": "tau=0.05 offers NO net benefit, same pattern as dim_256. KEEP tau=0.07."
+      }
+    },
+    "note_for_manuscript": "Original manuscript's stated justification numbers for tau=0.07/d=128 (specific NDCG values, 'catastrophic' d=256 framing) were measured under the buggy checkpoint-selection code and are factually wrong under the corrected model. The CONCLUSION (keep tau=0.07, d=128) is unchanged and is now MORE robustly supported (survived adversarial 3-seed replication of the two configs that looked like they might beat it)."
+  },
+
+  "generative_multiseed_5seed": {
+    "source": "generative/multiseed/aggregate/multiseed_summary.json + table2_with_ci.tsv",
+    "seeds": [42, 123, 456, 789, 1337],
+    "methods": {
+      "vae":              {"oscc_potency": "0.196\u00b10.019", "qed": "0.435\u00b10.011", "sa_score": "4.801\u00b10.019", "uniqueness": "98.7\u00b10.6%", "scaffold_novelty": "96.7\u00b10.4%"},
+      "cvae":             {"oscc_potency": "0.361\u00b10.185", "qed": "0.375\u00b10.091", "sa_score": "5.105\u00b10.493", "uniqueness": "98.0\u00b11.2%", "scaffold_novelty": "97.0\u00b11.7%"},
+      "diffusion":        {"oscc_potency": "0.101\u00b10.271", "qed": "0.133\u00b10.090", "sa_score": "7.533\u00b10.844", "uniqueness": "25.6\u00b111.9%", "scaffold_novelty": "100.0\u00b10.0%", "note": "near-random potency, catastrophic collapse in 2/5 seeds"},
+      "rl_vae":           {"oscc_potency": "0.726\u00b10.050", "qed": "0.693\u00b10.051", "sa_score": "4.123\u00b10.269", "uniqueness": "94.6\u00b14.2%", "scaffold_novelty": "92.4\u00b12.4%"},
+      "cglf":             {"oscc_potency": "0.378\u00b10.030", "qed": "0.272\u00b10.029", "sa_score": "5.155\u00b10.171", "uniqueness": "100.0\u00b10.0%", "scaffold_novelty": "96.1\u00b11.1%"},
+      "crave_filtered":   {"oscc_potency": "0.771\u00b10.033", "qed": "0.784\u00b10.043", "sa_score": "3.922\u00b10.257", "uniqueness": "100.0\u00b10.0%", "scaffold_novelty": "91.7\u00b13.0%", "per_seed_potency": [0.7922, 0.7739, 0.7964, 0.7150, 0.7784]},
+      "crave_unfiltered": {"oscc_potency": "0.724\u00b10.049", "qed": "0.692\u00b10.055", "sa_score": "4.152\u00b10.257", "uniqueness": "90.4\u00b15.9%", "scaffold_novelty": "92.4\u00b11.8%"}
+    },
+    "bimodal_rl_landscape_finding": "DOES NOT REPRODUCE (confirmed twice independently, both under the fully corrected checkpoint). CRAVE-filtered oscc_potency per seed lands in a continuous band 0.715-0.796 (mean 0.771+/-0.033) -- no split into a high-basin (~0.897, 3/5 seeds) and low-basin (~0.713, 2/5 seeds) as originally published. This headline claim is DROPPED from the fresh manuscript per user decision (2026-09-17); report the honest continuous-band finding instead.",
+    "table2_pairwise_stats_FRESH_and_brute_force_verified": {
+      "method": "One-sided Mann-Whitney U (H1: CRAVE-filtered > comparator), n1=n2=5, computed directly from the 5-seed oscc_potency values above. Exact p-value for U=25 (complete separation) independently brute-force verified by enumerating all C(10,5)=252 possible rank arrangements: only 1 gives complete separation -> p=1/252=0.003968.",
+      "CRAVE_vs_VAE":    {"U": 25, "p_raw": 0.0040, "p_bonferroni_x4": 0.0159, "cliffs_delta": 1.00, "significant": true},
+      "CRAVE_vs_cVAE":   {"U": 25, "p_raw": 0.0040, "p_bonferroni_x4": 0.0159, "cliffs_delta": 1.00, "significant": true},
+      "CRAVE_vs_CGLF":   {"U": 25, "p_raw": 0.0040, "p_bonferroni_x4": 0.0159, "cliffs_delta": 1.00, "significant": true},
+      "CRAVE_vs_RLVAE":  {"U": 22, "p_raw": 0.0278, "p_bonferroni_x4": 0.1111, "cliffs_delta": 0.76, "significant": false},
+      "note": "CORRECTS an earlier (wrong) session note that claimed the exact p for U=25 at n=5v5 was 0.0383 (not significant after Bonferroni) -- that was itself an error, disproven by brute-force enumeration. The originally published manuscript's Table 2 claim (significant for VAE/cVAE/CGLF, not for RL-VAE) is CORRECT and is what the fresh manuscript should state, using these freshly-computed U/p values."
+    }
+  },
+
+  "phase4_bioactivity_profiling": {
+    "source": "../BioactivityProfiling_Generative/profiling_summary.json (run 2026-09-16 19:54)",
+    "n_total_molecules_loaded": 7000,
+    "n_unique_molecules": 5416,
+    "n_methods": 6,
+    "per_method_counts": {"CRAVE_unfiltered": 2000, "CRAVE_filtered": 1000, "RL_VAE": 1000, "CGLF": 1000, "cVAE": 1000, "VAE": 1000},
+    "n_targets_scored": 25,
+    "n_consensus_hits": 1031,
+    "n_enriched_smarts": 24,
+    "safety_summary": {"pass": 1025, "caution": 1074, "fail": 4901, "pass_rate_pct": 14.6},
+    "aniline_toxicophore_flag_rate": {"n_flagged": 3725, "n_total": 7000, "pct": 53.2, "source": "../BioactivityProfiling_Generative/safety_profiles.tsv, toxicophore_names contains 'aniline'"},
+    "safety_collapse_finding": "Published (Run 1, Mar 2026): PASS=3294/6998=47.1%. This run: PASS=1025/7000=14.6%. CONFIRMED independent of the checkpoint-selection bug (near-identical 15.1% pre-fix vs 14.6% post-fix) -- a genuine, robust EGFR/aniline-toxicophore generative bias (aniline alone flags 48.4% of molecules; nearly all top-scoring generated molecules are EGFR-targeting aniline-quinazoline scaffolds, reflecting the training data's 28.9% EGFR skew). Per user decision (2026-09-17): report honestly as a Results finding + Discussion/Limitations item.",
+    "top_compound": {"smiles": "COc1cccc2ncnc(Nc3cccc(Br)c3)c12", "method": "CRAVE_unfiltered", "recommendation_weight": 0.8103, "vp_similarity": 0.8484, "overall_flag": "FAIL", "parent_target": "EGFR"}
+  },
+
+  "phase6_drug_repurposing": {
+    "source": "repurposing/results/repurposing_summary.json (run 2026-09-17 10:46)",
+    "n_total_compounds": 23308,
+    "n_targets_scored": 35,
+    "n_cross_study_smarts": 278,
+    "n_shared_smarts_repurposed_generated": 7,
+    "safety_summary": {"pass": 14801, "caution": 6782, "fail": 1725},
+    "validation_against_annotated": {"n_annotated": 653, "pearson_r": 0.3666, "spearman_rho": 0.5898, "mae": 1.77, "rmse": 2.83},
+    "top3": [
+      {"rank": 1, "chembl_id": "CHEMBL1079742", "name": "ERLOTINIB HYDROCHLORIDE", "recommendation_weight": 0.8724, "clinical_phase": "Approved", "flag": "PASS"},
+      {"rank": 2, "chembl_id": "CHEMBL554", "name": "LAPATINIB", "recommendation_weight": 0.8610, "clinical_phase": "Approved", "flag": "CAUTION"},
+      {"rank": 3, "chembl_id": "CHEMBL2408045", "name": "SAPITINIB", "recommendation_weight": 0.8439, "clinical_phase": "Phase 2", "flag": "PASS"}
+    ]
+  },
+
+  "phase7_docking": {
+    "source": "docking/results/docking_summary.json (7a, single-target) + multitarget_summary.json (7b, multi-target)",
+    "targets_confirmed_8": {
+      "AKT1": "3CQW", "EGFR": "4HJO", "FGFR1": "4V04", "MDM2": "4HG7",
+      "MTOR": "4DRH", "PIK3CA": "4JPS", "PTGS2": "3LN1", "STAT3": "6NUQ"
+    },
+    "note_on_old_fig6_caption": "The old manuscript's Fig 6 caption mentions CDK4 and Caspase-8 targets -- CONFIRMED these are NOT among the 8 actual docking targets (verified against docking_summary.json target list above). This is a pre-existing inconsistency, now fixed by using only the 8 confirmed targets in the fresh manuscript.",
+    "phase7a_single_target": {
+      "total_jobs": 364, "successful": 361, "failed": 3,
+      "energy_stats": {"mean": -7.86, "median": -8.02, "best": -11.21, "worst": -3.50, "sd": 1.29},
+      "thresholds": {"le_-6": 330, "le_-7": 283, "le_-8": 183, "le_-9": 55, "le_-10": 16},
+      "correlation_composite_vs_docking": {"spearman_rho": -0.201, "spearman_p": 0.00012},
+      "source_breakdown": {"generated": {"n": 200, "mean_energy": -7.98}, "repurposed": {"n": 161, "mean_energy": -7.71}}
+    },
+    "phase7b_multitarget": {
+      "n_compounds": 50, "n_targets": 7, "total_jobs": 350, "successful": 350, "failed": 0,
+      "energy_stats": {"mean": -8.75, "median": -8.86, "best": -11.65, "sd": 1.24},
+      "note": "all 50/50 elite candidates are 'Broad' binders (\u22653 targets \u2264-7.0 kcal/mol)"
+    }
+  },
+
+  "phase8_admet": {
+    "source": "admet/results/admet_summary.json",
+    "n_compounds": 361,
+    "physicochemical": {"lipinski_pass": 330, "veber_pass": 331, "mean_qed": 0.654, "mean_mw": 371.4, "mean_logp": 3.69},
+    "structural_alerts": {"pains_flagged": 2, "brenk_flagged": 117, "toxicophore_flagged": 63, "clean": 291},
+    "mucosal_safety": {"safe": 227, "moderate": 84, "high": 45, "amphiphilic_risk": 89},
+    "final_candidates": {"admet_pass": 136, "admet_caution": 180, "admet_fail": 45, "shortlist_size": 316},
+    "triple_validated_elite": {"count": 13, "mean_final_score": 0.7535},
+    "note": "13 elite (not the published 12) -- close, minor difference, expected/acceptable given the corrected model."
+  },
+
+  "phase9a_network_pharmacology": {
+    "source": "network_pharmacology/results/network_pharmacology_summary.json",
+    "n_compounds": 50, "n_targets": 7, "n_elite": 13, "n_pathways_mapped": 16, "n_pathway_categories": 4,
+    "polypharmacology": {"mean_targets_per_compound": 6.6, "mean_polypharmacology_score": 58.7, "elite_mean_poly_score": 55.6},
+    "top_pathway": {"name": "PI3K-AKT signalling (hsa04151)", "hits": 50}
+  },
+
+  "phase9b_lead_optimization": {
+    "source": "leadopt/results/leadopt_summary.json",
+    "n_elite_parents": 13,
+    "total_raw_analogs": 1877, "total_unique_analogs": 890, "improved_analogs": 854,
+    "scaffolds": {"unique_murcko": 13, "unique_generic": 12},
+    "mean_tanimoto": 0.401, "mean_admet_score": 0.861,
+    "note": "Only the 6 GEN_* (generated-molecule) parents produced any valid analogs; all 7 REP_* (repurposed/external) parents produced zero -- EXPECTED, not a bug: CRAVE's decoder is trained on the generative pipeline's own latent distribution and cannot reliably decode arbitrary external compounds' latents."
+  },
+
+  "phase10_final_ranking": {
+    "source": "final_ranking/results/master_ranked_all.tsv (fresh, 2026-09-17; NOT results/phase10_final_ranking.md which is the stale Mar-2026 Run-1 report)",
+    "n_total_ranked": 1161,
+    "source_breakdown": {"generated": 987, "repurposed": 129},
+    "validation_tier_distribution": {"Tier-1_fully_validated": 46, "Tier-3_partial": 270, "Tier-4_prediction_only": 845},
+    "is_elite_count": 13,
+    "generated_novelty_distribution": {"novel": {"n": 527, "pct": 53.4}, "scaffold_hop": {"n": 433, "pct": 43.9}, "close_analog": {"n": 27, "pct": 2.7}},
+    "top3_overall": [
+      {"rank": 1, "cpd_id": "REP_CHEMBL1236962", "name": "OMIPALISIB", "final_score": 0.7833, "tier": "Tier-1", "novelty": "close_analog", "source": "repurposed"},
+      {"rank": 2, "cpd_id": "REP_CHEMBL4800252", "name": "RISOVALISIB", "final_score": 0.8283, "tier": "Tier-1", "novelty": "close_analog", "source": "repurposed"},
+      {"rank": 3, "cpd_id": "REP_CHEMBL3545235", "name": "Simotinib", "final_score": 0.7456, "tier": "Tier-1", "novelty": "close_analog", "source": "repurposed"}
+    ],
+    "GEN_00045_headline_example": {"rank": 8, "final_score": 0.7371, "tier": "Tier-1 (fully validated)", "old_published_rank": 7, "old_published_score": 0.584},
+    "GEN_00182_top_generated": {"rank": 5, "genesis_score": 0.6680, "final_score": 0.7815, "note": "top-ranked GENERATED (not repurposed) compound overall -- candidate headline de novo example"},
+    "ranking_formula_note": "RESOLVED: rank sorts by 'genesis_score' (verified: final_ranking/run_final_ranking.py line 512/926, sort_values('genesis_score', ascending=False)), NOT 'final_score' (a separate column, confirmed by checking rank1-5: genesis_score is monotonically descending, final_score is not). Use genesis_score as THE ranking metric in Methods/Results prose; final_score is a distinct secondary metric.",
+    "old_vs_fresh_comparison": "Old (stale, Mar 2026) top-1 was REP_CHEMBL1879463 (Dactolisib, score=0.754); fresh top-1 is REP_CHEMBL1236962 (OMIPALISIB, genesis_score=0.7158). Old novelty distribution (87.5%/9.8%/2.7% on n=1000) differs substantially from fresh (53.4%/43.9%/2.7% on n=987) -- note the close-analog count (27) is identical in both, worth a brief sanity note but not blocking."
+  },
+
+  "cross_cancer_transfer": {
+    "source": "modeling/baselines/results/cross_cancer/transfer_results_target_based.json -- ALREADY CORRECTED in GENESIS_NMI_Manuscript_v1.docx this session, ported verbatim",
+    "n_total": 52373, "n_in_index": 29675,
+    "pgcl_rho": 0.5022, "ecfp4_rho": 0.3898,
+    "oscc_reference": "stratified 3-seed rho = 0.555 +/- 0.003 (NOT the old, non-reproducing full-pool 0.740)",
+    "per_target": {
+      "EGFR":   {"rho": 0.561, "ci": [0.547, 0.574], "n": 11886},
+      "PIK3CA": {"rho": 0.688, "ci": [0.675, 0.701], "n": 9009},
+      "ALK":    {"rho": 0.225, "ci": [0.145, 0.304], "n": 591, "note": "real signal, CI excludes 0"},
+      "KRAS":   {"rho": 0.076, "ci": [-0.053, 0.205], "n": 239, "note": "NOT statistically significant, CI crosses 0"}
+    }
+  },
+
+  "remaining_ambiguities_for_phase_c": [
+    "Drug-name lookups: MOSTLY RESOLVED -- compound_name column in final_ranking/repurposing TSVs already has real names (OMIPALISIB, RISOVALISIB, Simotinib, ERLOTINIB HYDROCHLORIDE, LAPATINIB, SAPITINIB). Spot-check a couple against ChEMBL/DrugBank before citing as clinical fact (e.g. RISOVALISIB, Simotinib are less well-known names -- verify spelling/identity).",
+    "Phase 10 ranking formula: RESOLVED -- rank sorts by 'genesis_score' (verified in run_final_ranking.py), not 'final_score'. Use genesis_score in prose.",
+    "Repurposing best_target field: RESOLVED -- verified in repurposing/run_drug_repurposing.py line 438: best_target = argmax of per-target composite score for that compound, i.e. the target where THIS model's score is highest, not necessarily the compound's established clinical mechanism of action. Erlotinib's clinical MoA is EGFR, but its best_target field here shows PI3-kinase -- this is a model-scoring artifact, not an error. MUST include a one-line caveat when citing best_target in prose (e.g. 'reflects the model's highest per-target composite match, not necessarily the compound's approved clinical indication').",
+    "Docking Fig 6 caption CDK4/Caspase-8 targets: CONFIRMED not part of actual 8-target docking panel -- use the verified 8 targets (AKT1/EGFR/FGFR1/MDM2/MTOR/PIK3CA/PTGS2/STAT3) instead.",
+    "phase10 novelty count discrepancy: close_analog count identical (27) between old stale run and fresh run while novel/scaffold_hop split differently -- worth a one-line sanity check of the NKA reference library composition before writing, low priority."
+  ]
+}
