@@ -81,13 +81,15 @@ brew install autodock-vina
 
 ## Large Files (Zenodo)
 
-Pre-computed MolDeBERTa embeddings and trained generative-model checkpoints are hosted on Zenodo (the canonical PGCL checkpoint and its 3 multiseed variants are small enough to be tracked directly in this repository and require no download):
+Pre-computed MolDeBERTa embeddings and trained model checkpoints are archived on Zenodo for permanent, citable, DOI-backed access:
 
 > **DOI**: [10.5281/zenodo.TBD] ← *to be filled in after upload*
 
 ```bash
 python scripts/download_embeddings.py
 ```
+
+The canonical PGCL checkpoint (`modeling/checkpoints/best.pt`) and its 3 multiseed variants are also tracked directly in this repository (small, <10 MB each) — they do not need to be downloaded to run the pipeline, but a permanent Zenodo copy is kept independent of GitHub's future availability, since this is the single most important artifact in the paper. The embeddings (~1.5 GB) and the 6 generative-method checkpoints (~325 MB) are Zenodo-only.
 
 Without these files, start from Phase 0 (re-extracts embeddings, ~45 min) and Phase 3 (re-trains the generative models, ~27 h for all 6 methods × 5 seeds — or just seed 42 for a faster ~5.5 h single-seed run).
 

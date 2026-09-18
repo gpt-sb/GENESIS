@@ -15,7 +15,10 @@ Without them, the pipeline can still run from scratch:
 
 The small PGCL checkpoints (modeling/checkpoints/best.pt and the 3 multiseed
 checkpoints, all <10MB) ARE tracked directly in this repository and do not
-need to be downloaded separately.
+need to be downloaded separately -- this script does not re-fetch them. They
+are, however, also archived on the same Zenodo record for permanent, citable
+access independent of GitHub, since the PGCL checkpoint is the single most
+important artifact in the paper.
 
 Zenodo DOI: 10.5281/zenodo.[TBD -- fill in after the record is published]
 
