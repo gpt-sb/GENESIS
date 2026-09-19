@@ -288,10 +288,12 @@ def build():
               ['NDCG@100', T1['ndcg_100']['PGCL'], T1['ndcg_100']['FlatSupCon'],
                T1['ndcg_100']['BCE'], T1['ndcg_100']['ECFP4_kNN'], '\u2014'],
           ],
-          caption='Table 1. PGCL values are 3-seed mean\u00b1SD; baselines are single deterministic '
-                  'evaluations (RF/XGB additionally 3-seed, see Methods). NDCG@100 uses potency-graded '
-                  'relevance (VP=3, Potent=2, Active=1, negative=0) on compounds ranked by cosine '
-                  'similarity to the very-potent centroid c_VP (Eq. VP). \u2014, not applicable.')
+          caption='Table 1. PGCL, Flat SupCon, BCE, RF and XGB values are all 3-seed '
+                  '(42/123/456) mean\u00b1SD; ECFP4 k-NN is the sole deterministic baseline '
+                  '(nearest-neighbour retrieval has no training stochasticity, see Methods). '
+                  'NDCG@100 uses potency-graded relevance (VP=3, Potent=2, Active=1, negative=0) '
+                  'on compounds ranked by cosine similarity to the very-potent centroid c_VP '
+                  '(Eq. VP). \u2014, not applicable.')
     para(doc,
         f'Ordinal potency-weighting shows a genuine, mechanistically selective benefit over flat '
         f'contrastive learning: PGCL wins 4 of 5 metrics against Flat SupCon, with cliff-pair '
@@ -637,9 +639,9 @@ def build():
         'compounds were extracted from ChEMBL [29] with pChEMBL \u2265 5.0 '
         '(IC50/Ki/Kd/EC50 \u2264 10 \u03bcM), yielding 49,312 compound-target-activity records.')
     table(doc, ['Class', 'Label', 'pChEMBL range', 'IC\u2085\u2080 equivalent'],
-          [['3', 'Very Potent', '\u2265 8.0', '\u2264 10 nM'],
-           ['2', 'Potent', '6.5\u20138.0', '10\u2013316 nM'],
-           ['1', 'Active', '5.0\u20136.5', '316 nM\u201310 \u03bcM']],
+          [['3', 'Very Potent', '\u2265 7.0', '\u2264 100 nM'],
+           ['2', 'Potent', '6.0\u20137.0', '100 nM\u20131 \u03bcM'],
+           ['1', 'Active', '5.0\u20136.0', '1\u201310 \u03bcM']],
           caption='Table M0. Ordinal potency classification thresholds.')
     para(doc,
         'Negatives are curated into six biologically motivated tiers spanning a hardness gradient: '

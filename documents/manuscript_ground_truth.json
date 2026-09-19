@@ -70,12 +70,12 @@
     "note": "Full-pool rho (0.341) is LOWER than the stratified rho (0.555) -- the opposite of the old manuscript's own stated rationale ('full-pool inflates rank correlation'). This concept is dropped from the fresh manuscript; only the stratified rho is used, consistently, everywhere including Table 1."
   },
   "table1_baselines": {
-    "source": "modeling/baselines/results/{flat_supcon,bce_classifier,ecfp4_knn,qsar}/comparison*.json -- ALREADY CORRECTED in GENESIS_NMI_Manuscript_v1.docx this session, ported verbatim",
+    "source": "modeling/baselines/results/{flat_supcon,bce_classifier,ecfp4_knn,qsar}/comparison_3seed.json + comparison.json (ECFP4 kNN, deterministic) -- corrected 2026-09-19: FlatSupCon/BCE were previously stored as stale single-run values despite comparison_3seed.json (3-seed 42/123/456) already existing; now ported verbatim from the 3-seed files",
     "metrics": {
       "potency_spearman_rho": {
         "PGCL": "0.555\u00b10.003",
-        "FlatSupCon": 0.526,
-        "BCE": 0.364,
+        "FlatSupCon": "0.5194\u00b10.0049",
+        "BCE": "0.3722\u00b10.0126",
         "ECFP4_kNN": 0.542,
         "RF": "0.7874\u00b10.0006",
         "XGB": "0.7351\u00b10.0000",
@@ -83,8 +83,8 @@
       },
       "cliff_pair_accuracy": {
         "PGCL": "0.664\u00b10.003",
-        "FlatSupCon": 0.671,
-        "BCE": 0.557,
+        "FlatSupCon": "0.6631\u00b10.0059",
+        "BCE": "0.5718\u00b10.0154",
         "ECFP4_kNN": 0.375,
         "RF": null,
         "XGB": null,
@@ -92,8 +92,8 @@
       },
       "target_switch_auroc": {
         "PGCL": "0.967\u00b10.001",
-        "FlatSupCon": 0.97,
-        "BCE": 0.867,
+        "FlatSupCon": "0.9684\u00b10.0018",
+        "BCE": "0.8694\u00b10.0131",
         "ECFP4_kNN": null,
         "RF": "0.9100\u00b10.0007",
         "XGB": "0.8806\u00b10.0000",
@@ -106,13 +106,13 @@
       },
       "ndcg_100": {
         "PGCL": "0.941\u00b10.025",
-        "FlatSupCon": 0.934,
-        "BCE": 0.82,
+        "FlatSupCon": "0.9307\u00b10.0313",
+        "BCE": "0.8496\u00b10.0213",
         "ECFP4_kNN": 1.0
       },
       "library_size": "147,618 (7,362 test positives + 140,256 test negatives), identical for every method"
     },
-    "key_finding": "PGCL vs Flat SupCon (true 3-seed-vs-3-seed): PGCL wins 4/5 metrics; cliff-pair accuracy is now a statistical TIE (66.4% vs 67.1%) -- the old 'central architectural insight' (89% vs 65%) does not survive. PGCL's NDCG@100 (0.941) now EXCEEDS Flat SupCon (0.934) and BCE (0.820), inverting the old claim that those baselines beat PGCL on this metric."
+    "key_finding": "PGCL vs Flat SupCon (true 3-seed-vs-3-seed): PGCL wins 4/5 metrics; cliff-pair accuracy delta is within combined SD (66.38\u00b10.34% vs 66.31\u00b10.59%, PGCL nominally higher) -- the old 'central architectural insight' (89% vs 65%) does not survive. PGCL's NDCG@100 (0.941) now EXCEEDS Flat SupCon (0.931) and BCE (0.850), inverting the old claim that those baselines beat PGCL on this metric. Only ECFP4 k-NN is a genuinely deterministic (seed-invariant) baseline; FlatSupCon and BCE are both 3-seed (42/123/456) neural-network baselines, same as PGCL and RF/XGB."
   },
   "ablations_8config": {
     "source": "modeling/validation/ablations/ablation_results.json (seed=42 for all 8; dim_256 and temp_0.05 additionally confirmed via full 3-seed replication)",
