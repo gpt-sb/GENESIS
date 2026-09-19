@@ -36,7 +36,7 @@ ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 ax.text(0.02, 0.97,
         "PGCL and Flat SupCon are statistically indistinguishable\n"
-        "(66.4% vs 67.1%) \u2014 contrastive learning drives cliff\n"
+        "(66.4% vs 66.3%) \u2014 contrastive learning drives cliff\n"
         "discrimination; ordinal weighting's distinct benefit is\n"
         "the potency-ranking gradient (see Table 1).",
         transform=ax.transAxes, fontsize=7.5, va="top", ha="left",
