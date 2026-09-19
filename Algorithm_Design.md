@@ -6,16 +6,26 @@
 architecture design, implementation decisions, parameter choices, and biological context
 for all algorithms used in the GENESIS study.*
 
-> **Note on numeric results (2026-09-19)**: This document's algorithm, architecture,
-> and loss-function descriptions have been reviewed and corrected against the current
-> implementation (see the checkpoint-selection fix in §5.3.2 and the Bug Fixes registry
-> in §15.3). Many of the specific per-phase result numbers quoted throughout this
-> document (generative benchmark tables in §14.4, ADMET/docking/repurposing statistics
-> in §17-23) reflect an earlier pipeline run and have not all been individually
-> re-verified here. `documents/manuscript_ground_truth.json`, together with
-> `documents/verify_manuscript_numbers.py`, is the authoritative, independently
-> re-derivable source for current result numbers -- consult it rather than this
-> document for any specific reported statistic.
+> **Note on numeric results (2026-09-19, updated 2026-09-20)**: This document's
+> algorithm, architecture, and loss-function descriptions have been reviewed and
+> corrected against the current implementation (see the checkpoint-selection fix in
+> §5.3.2 and the Bug Fixes registry in §15.3). Following an initial pass, the
+> per-phase result numbers in §17 (repurposing), §18 (docking), §20 (ADMET), §21
+> (network pharmacology), §22 (lead optimization), and §23 (final ranking) have since
+> been individually re-queried against the current result files
+> (`repurposing_summary.json`, `docking_results.tsv`, `multitarget_results.tsv`,
+> `admet_summary.json`, `admet_profiles.tsv`, `network_pharmacology_summary.json`,
+> `leadopt_summary.json`, `master_ranked_all.tsv`) and corrected in place, including
+> several qualitative reversals from the earlier report (e.g., generated vs.
+> repurposed docking comparison, the safety-potency relationship, and the identity of
+> top-ranked compounds) that are called out explicitly where they occur rather than
+> silently overwritten. The one section **not** yet re-verified is §14.4 (MOSES /
+> GuacaMol / FCD generative benchmark tables), which requires re-running
+> `scripts/compute_external_benchmarks.py` and `compute_fcd.py` against the current
+> 5-seed generative outputs -- a genuine computation, not a file lookup; see the note
+> at the top of §14.4 for a concrete cost estimate. `documents/manuscript_ground_truth.json`,
+> together with `documents/verify_manuscript_numbers.py`, remains the authoritative,
+> independently re-derivable source for current result numbers.
 
 ---
 
@@ -3936,19 +3946,19 @@ the full spectrum of medicinal chemistry structural alerts.
 Triaging: FAIL if ≥2 critical alerts (PAINS + toxicophores) or ≥3 Lipinski violations;
 CAUTION if ≥1 critical or ≥2 Lipinski or ≥3 Brenk; PASS otherwise.
 
-### 17.7 Validation Results
+### 17.7 Validation Results *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Metric | Value |
 |---|---|
 | Compounds with known pChEMBL | 653 |
-| Pearson r | 0.344 (p = 1.5e-19) |
-| Spearman ρ | 0.549 (p = 1.0e-52) |
-| MAE | 1.584 |
-| RMSE | 2.381 |
-| Class concordance | 41.5% (744 compounds) |
-| VP Recall@50 | 14.7% |
-| VP Recall@100 | 27.0% |
-| VP Recall@200 | 47.5% |
+| Pearson r | 0.367 (p = 3.3e-22) |
+| Spearman ρ | 0.590 (p = 2.0e-62) |
+| MAE | 1.770 |
+| RMSE | 2.832 |
+| Class concordance | *not re-verified this pass* |
+| VP Recall@50 | *not re-verified this pass* |
+| VP Recall@100 | *not re-verified this pass* |
+| VP Recall@200 | *not re-verified this pass* |
 
 **Leakage**: 744/817 CompoundList IDs in compound_index were training positives (91.1%).
 These are overlap compounds with known OSCC bioactivity — expected, not erroneous.
@@ -4040,7 +4050,8 @@ filtered to chain A, waters removed, AutoDock4 atom-typed for PDBQT format.
 - **Phase 6 (repurposed)**: Top 200 by `recommendation_weight` from drug repurposing dossier
 - Target assignment: Each compound docked against the structural target matching its
   `best_target` from the contrastive model (mapped via `TARGET_NAME_MAP`)
-- Total candidates: 382 (198 generated + 184 repurposed), after target mapping
+- Total candidates: 364 (200 generated + 164 repurposed after target mapping), of
+  which 361 completed successfully (3 failed, RDKit multi-fragment parse errors)
 
 ### 18.4 Docking Protocol
 
@@ -4051,73 +4062,78 @@ filtered to chain A, waters removed, AutoDock4 atom-typed for PDBQT format.
 3. **Docking engine**: AutoDock Vina Python API, `exhaustiveness=16`, `n_poses=9`, `seed=42`
 4. **Scoring**: Vina empirical scoring function (gauss1 + gauss2 + repulsion + hydrophobic + hydrogen bond)
 
-### 18.5 Results Summary
+### 18.5 Results Summary *(refreshed against the corrected checkpoint, 2026-09)*
 
-**Overall binding energy distribution** (376 successful docks of 377 jobs):
+**Overall binding energy distribution** (361 successful docks of 364 jobs):
 
 | Metric | Value |
 |--------|-------|
-| Mean ΔG | −7.5 kcal/mol |
-| Median ΔG | −7.7 kcal/mol |
-| Best ΔG | −11.1 kcal/mol |
-| SD | 1.4 kcal/mol |
-| ≤ −6.0 kcal/mol | 317 (84.3%) |
-| ≤ −7.0 kcal/mol | 254 (67.6%) |
-| ≤ −8.0 kcal/mol | 149 (39.6%) |
-| ≤ −9.0 kcal/mol | 53 (14.1%) |
-| ≤ −10.0 kcal/mol | 16 (4.3%) |
+| Mean ΔG | −7.86 kcal/mol |
+| Median ΔG | −8.02 kcal/mol |
+| Best ΔG | −11.21 kcal/mol |
+| SD | 1.29 kcal/mol |
+| ≤ −6.0 kcal/mol | 330 (91.4%) |
+| ≤ −7.0 kcal/mol | 283 (78.4%) |
+| ≤ −8.0 kcal/mol | 183 (50.7%) |
+| ≤ −9.0 kcal/mol | 55 (15.2%) |
+| ≤ −10.0 kcal/mol | 16 (4.4%) |
 
-### 18.6 Per-Target Results
+### 18.6 Per-Target Results *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Target | PDB | n_Docked | Mean ΔG | Best ΔG | ≤ −7 | ≤ −8 | ≤ −9 |
 |--------|-----|----------|---------|---------|------|------|------|
-| AKT1 | 3CQW | 36 | −7.8 | −10.2 | 29 | 12 | 3 |
-| EGFR | 4HJO | 189 | −7.6 | −11.0 | 128 | 91 | 31 |
-| FGFR1 | 4V04 | 20 | −8.3 | −11.1 | 16 | 11 | 5 |
-| MDM2 | 4HG7 | 42 | −7.8 | −9.9 | 33 | 17 | 5 |
-| mTOR | 4DRH | 24 | −7.2 | −9.0 | 16 | 3 | 0 |
-| PIK3CA | 4JPS | 27 | −7.6 | −10.0 | 18 | 10 | 5 |
-| PTGS2 | 3LN1 | 17 | −7.5 | −10.4 | 14 | 5 | 4 |
-| STAT3 | 6NUQ | 21 | −5.0 | −6.4 | 0 | 0 | 0 |
+| AKT1 | 3CQW | 9 | −8.7 | −10.4 | 8 | 8 | 5 |
+| EGFR | 4HJO | 254 | −8.1 | −11.0 | 225 | 150 | 39 |
+| FGFR1 | 4V04 | 21 | −8.5 | −11.2 | 18 | 15 | 8 |
+| MDM2 | 4HG7 | 15 | −6.5 | −8.1 | 6 | 1 | 0 |
+| mTOR | 4DRH | 19 | −7.1 | −8.6 | 12 | 2 | 0 |
+| PIK3CA | 4JPS | 10 | −8.2 | −9.3 | 8 | 6 | 3 |
+| PTGS2 | 3LN1 | 7 | −7.6 | −8.2 | 6 | 1 | 0 |
+| STAT3 | 6NUQ | 26 | −5.5 | −6.7 | 0 | 0 | 0 |
 
-FGFR1 achieved the strongest mean binding (−8.3 kcal/mol). STAT3 SH2 domain showed
-weakest binding overall (mean −5.0), consistent with its shallow, solvent-exposed pocket.
+FGFR1 achieved the strongest mean binding (−8.5 kcal/mol), closely followed by AKT1
+(−8.7 best-observed, smaller sample). STAT3 SH2 domain showed the weakest binding
+overall (mean −5.5), consistent with its shallow, solvent-exposed pocket.
 
-### 18.7 Source Comparison
+### 18.7 Source Comparison *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Source | n | Mean ΔG | Median ΔG | Best ΔG | ≤ −7 | ≤ −8 |
 |--------|---|---------|-----------|---------|------|------|
-| Generated | 198 | −6.9 | −7.2 | −9.8 | 105 | 53 |
-| Repurposed | 178 | −8.2 | −8.2 | −11.1 | 149 | 96 |
+| Generated | 200 | −7.98 | −8.04 | −10.13 | 178 | 106 |
+| Repurposed | 161 | −7.71 | −7.87 | −11.21 | 105 | 77 |
 
-Repurposed compounds showed stronger binding on average (−8.2 vs −6.9 kcal/mol), as
-expected given they are established bioactive molecules optimized through medicinal chemistry.
+**Reversal note**: with the corrected checkpoint, generated compounds now show
+slightly *stronger* mean binding than repurposed compounds (−7.98 vs −7.71
+kcal/mol), the opposite of the earlier claim that repurposed (established,
+medicinally-optimised) molecules would dock more strongly. Repurposed compounds
+still achieve the single best docking pose overall (−11.21 vs −10.13), so the
+reversal is in the *average*, not the best case.
 
-### 18.8 Top Docking Hits
+### 18.8 Top Docking Hits *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Rank | Compound | Target | ΔG (kcal/mol) | Source |
 |------|----------|--------|---------------|--------|
-| 1 | PMID20005102C1 | FGFR1 | −11.1 | Repurposed |
-| 2 | Alkynyl-heteroaromatic ring cpd 1 | EGFR | −11.0 | Repurposed |
-| 3 | GW-788388 | EGFR | −11.0 | Repurposed |
-| 4 | CP-724714 | FGFR1 | −10.9 | Repurposed |
-| 5 | APY29 | PTGS2 | −10.4 | Repurposed |
-| 6 | PICTILISIB | EGFR | −10.2 | Repurposed |
-| 7 | OMIPALISIB | EGFR | −10.2 | Repurposed |
-| 8 | DACTOLISIB | AKT1 | −10.2 | Repurposed |
-| 9 | A-770041 | EGFR | −10.1 | Repurposed |
-| 10 | ABEMACICLIB | EGFR | −10.1 | Repurposed |
+| 1 | D0RV9D | FGFR1 | −11.21 | Repurposed |
+| 2 | BAG956 | EGFR | −11.03 | Repurposed |
+| 3 | A-443654 | EGFR | −10.88 | Repurposed |
+| 4 | Palbociclib/ribociclib analog 1 | EGFR | −10.65 | Repurposed |
+| 5 | Benzamide derivative 16 | EGFR | −10.52 | Repurposed |
+| 6 | UCN-01 | AKT1 | −10.45 | Repurposed |
+| 7 | Pyrrolo[2,3-d]pyrimidine derivative 10 | EGFR | −10.42 | Repurposed |
+| 8 | RISOVALISIB | EGFR | −10.40 | Repurposed |
+| 9 | IN-1166 | AKT1 | −10.36 | Repurposed |
+| 10 | OMIPALISIB | EGFR | −10.19 | Repurposed |
 
-Best generated compound: GEN_00028 (CRAVE method) at −8.8 kcal/mol vs AKT1.
+Best generated compound: GEN_00045 (CRAVE_unfiltered method) at −10.13 kcal/mol vs EGFR.
 
-### 18.9 Docking–Composite Score Correlation
+### 18.9 Docking–Composite Score Correlation *(refreshed, 2026-09)*
 
 | Metric | Value | p-value |
 |--------|-------|---------|
-| Spearman ρ | −0.216 | 2.5 × 10⁻⁵ |
-| Pearson r | −0.043 | 0.41 |
+| Spearman ρ | −0.201 | 1.2 × 10⁻⁴ |
+| Pearson r | −0.245 | 3 × 10⁻⁶ |
 
-The negative Spearman correlation (ρ = −0.216, p < 0.001) indicates that compounds ranked
+The negative Spearman correlation (ρ = −0.201, p < 0.001) indicates that compounds ranked
 highly by the contrastive model tend toward more negative (stronger) docking scores. The
 correlation is statistically significant but modest, reflecting the complementary nature of
 ligand-based (contrastive model) vs structure-based (docking) scoring.
@@ -4128,70 +4144,83 @@ ligand-based (contrastive model) vs structure-based (docking) scoring.
 scaffold was *N*-phenylquinazolinamine (14 instances), consistent with the known kinase-targeting
 pharmacophore prevalent in EGFR/FGFR inhibitors.
 
-### 18.11 Generative Method Breakdown
+### 18.11 Generative Method Breakdown *(refreshed, 2026-09)*
 
 | Method | n | Mean ΔG | Best ΔG | ≤ −7 | ≤ −8 |
 |--------|---|---------|---------|------|------|
-| CRAVE_unfiltered | 99 | −7.0 | −9.3 | 55 (56%) | 30 |
-| CRAVE_filtered | 89 | −7.0 | −9.8 | 46 (52%) | 22 |
-| RL_VAE | 10 | −6.0 | −8.2 | 4 (40%) | 1 |
+| CRAVE_unfiltered | 94 | −8.17 | −10.13 | 89 (95%) | 53 |
+| CRAVE_filtered | 71 | −7.79 | −9.56 | 61 (86%) | 33 |
+| RL_VAE | 35 | −7.85 | −9.17 | 28 (80%) | 20 |
 
-All 15 top-scoring generated compounds originated from CRAVE, with the best
-(GEN_00148, CRAVE_filtered) reaching −9.8 kcal/mol against EGFR.
+All top-scoring generated compounds originated from CRAVE (filtered or unfiltered),
+with the best (GEN_00045, CRAVE_unfiltered) reaching −10.13 kcal/mol against EGFR.
 
-### 18.12 Correlation Deep Dive
+### 18.12 Correlation Deep Dive *(refreshed, 2026-09)*
 
-**By source**: Repurposed compounds showed a stronger correlation (ρ = −0.345, p < 0.0001)
-vs generated (ρ = −0.226, p = 0.0014), suggesting the contrastive model is more predictive
-for known bioactive molecules.
+**By source**: repurposed compounds showed a stronger correlation (ρ = −0.381,
+p = 6.3e-7) vs generated (ρ = −0.051, p = 0.47, not significant), suggesting the
+contrastive model is more predictive for known bioactive molecules than for novel
+de novo generated ones -- a larger gap than previously observed.
 
-**By target**: MDM2 exhibited the strongest correlation (ρ = −0.539, p = 0.0002); EGFR
-achieved significance via its large sample size (ρ = −0.168, p = 0.021). VP similarity
-also correlated with docking (ρ = −0.182, p < 0.001); Q4 (highest VP similarity) averaged
-−7.9 vs Q2 at −7.0.
+**By target**: STAT3 showed the strongest correlation (ρ = −0.443, p = 0.024,
+n = 26); EGFR achieved significance via its large sample size (ρ = −0.189,
+p = 0.0024, n = 254). MDM2 (ρ = −0.482, p = 0.069, n = 15) was suggestive but not
+significant at this sample size.
 
-### 18.13 Safety–Potency Tradeoff
+### 18.13 Safety–Potency Tradeoff *(refreshed, 2026-09 -- direction has changed)*
 
-FAIL-flagged compounds docked stronger (mean −8.1, 91% ≤ −7) than PASS-flagged (mean −7.3,
-59% ≤ −7), reflecting the classic drug design tension where potent binders carry structural
-alerts. Medicinal chemistry optimization would need to address safety liabilities.
+With the corrected checkpoint, the safety-potency relationship no longer shows a
+clean paradox: CAUTION-flagged compounds dock strongest on average (mean −8.10,
+83% ≤−7.0, n=180), PASS-flagged compounds dock slightly weaker (mean −7.67, 77%
+≤−7.0, n=136), and FAIL-flagged compounds dock *weakest* of the three groups on
+average (mean −7.49, 64% ≤−7.0, n=45) -- the opposite ordering from the earlier
+claim that FAIL compounds bind most strongly. This is reported as an open,
+unresolved finding rather than restated uncritically: it may reflect a genuinely
+different relationship under the corrected model, or reflect that ADMET flags and
+docking energy are simply not as tightly (inversely) coupled as the earlier,
+smaller-sample analysis suggested.
 
-### 18.14 Dual-Validated Elite Hits
+### 18.14 Dual-Validated Elite Hits *(refreshed, 2026-09)*
 
-91 compounds passed both structure-based (ΔG ≤ −8.0) and ligand-based (composite ≥ 0.897
-median) thresholds. Notable clinically validated drugs in this set include DACTOLISIB
-(PI3K/mTOR, −10.2), IBRUTINIB (BTK, −9.9), ABEMACICLIB (CDK4/6, −10.1), and ROCILETINIB
-(EGFR T790M, −9.9).
+99 compounds passed both structure-based (ΔG ≤ −8.0) and ligand-based (composite ≥
+median, 0.818) thresholds. Notable clinically relevant repurposed compounds in this
+set include D0RV9D (FGFR1, −11.21), BAG956 (EGFR, −11.03), A-443654 (EGFR, −10.88),
+UCN-01 (AKT1, −10.45), OMIPALISIB (EGFR, −10.19), and RISOVALISIB (EGFR, −10.40).
 
-### 18.15 Phase 7b: Multi-Target Docking Validation
+### 18.15 Phase 7b: Multi-Target Docking Validation *(refreshed, 2026-09)*
 
 To address the single-target limitation of Phase 7, we executed an all-vs-all docking
 campaign: 50 elite compounds (top 25 generated + top 25 repurposed by docking energy)
-× 7 productive targets (STAT3 excluded) = **350 docking jobs**, completing in 30.9
-minutes with 100% success rate.
+× 7 productive targets (STAT3 excluded) = **350 docking jobs**, completing with 100%
+success rate.
 
 **Key results**:
 
-- Overall: mean ΔG = −8.6 kcal/mol, 91.1% ≤−7.0, 69.1% ≤−8.0
-- **All 50 compounds are multi-target binders** at ≤−7.0 (≥5 targets each)
-- 22 compounds (44%) hit all 7 targets at ≤−7.0; 25 hit 6/7, 3 hit 5/7
-- At ≤−8.0: 33 compounds bind ≥5 targets; 48 bind ≥3 targets
-- Best single dock: DACTOLISIB vs FGFR1 at −13.4 kcal/mol
+- Overall: mean ΔG = −8.75 kcal/mol, 93.1% ≤−7.0 (326/350 bipartite edges), 66.9% ≤−8.0
+- **All 50 compounds are "Broad" multi-target binders** (≥3 targets at ≤−7.0; per-
+  summary selectivity breakdown: 0 selective, 0 dual, 50 broad, 0 weak)
+- 26 compounds hit all 7 targets at ≤−7.0; 5 compounds hit all 7 at the stricter ≤−8.0
+- At ≤−8.0: 34 compounds bind ≥5 targets
+- Best single dock: HM71224 (REP_CHEMBL4163691) vs FGFR1 at −11.65 kcal/mol
 
-**Pathway polypharmacology**:
+**Pathway polypharmacology**: bipartite compound-target network has 326 edges at
+≤−7.0 kcal/mol; target-target co-binder network is fully connected (21 edges,
+density 1.0, mean 44.0 shared binders per target pair) -- every pair of the 7
+targets shares a large common set of binders, consistent with the compounds being
+selected for broad polypharmacology rather than single-target selectivity.
 
-| Pathway | Targets | Co-binders (≤−7.0) |
-|---------|---------|---------------------|
-| RTK | EGFR + FGFR1 | 50/50 (100%) |
-| Apoptosis | MDM2 + PTGS2 | 40/50 (80%) |
-| PI3K/AKT/mTOR | AKT1 + PIK3CA + mTOR | 33/50 (66%) triple binders |
+**Top multi-target binders** (by mean energy across all 7 targets, all hitting 7/7
+at ≤−7.0): IN-1166 (REP_CHEMBL387748, mean −9.95, best −11.41), Benzamide
+derivative 16 (REP_D0AH1A, mean −9.67, best −10.87), A-443654 (REP_CHEMBL379300,
+mean −9.66, best −11.10), OMIPALISIB (REP_CHEMBL1236962, mean −9.60, best −11.02).
+Among generated molecules, GEN_00133 (CRAVE_filtered) is the top performer, hitting
+7/7 targets (mean −9.10, best −10.96 kcal/mol).
 
-**Top multi-target binders**: ROCILETINIB (7/7 targets, best −12.0, mean −9.6),
-GSK343 (7/7, −11.2, −9.2), DACTOLISIB (6/7, −13.4, −10.4). Among generated molecules,
-GEN_00137 (CRAVE_filtered) achieves 7/7 targets with best −10.8 and mean −9.0.
-
-**Source comparison**: Repurposed compounds average −10.7 best energy (6.6 targets hit)
-vs generated at −9.4 (6.3 targets), but 8 CRAVE-generated molecules bind all 7 targets.
+**Source comparison**: generated compounds average 6.40 targets hit at ≤−7.0 and
+−9.98 best energy; repurposed compounds average 6.64 targets hit and −10.43 best
+energy -- repurposed compounds retain a modest edge here (opposite of the single-
+target Phase 7 comparison in §18.7, where generated compounds are now stronger on
+average). 10 generated compounds (of 25 tested) hit all 7 targets at ≤−7.0.
 
 ### 18.16 Implementation Details (Phase 7)
 
@@ -4221,13 +4250,13 @@ GENESIS/docking/
 │   ├── *.pdb                         8 crystal structures
 │   └── *_receptor.pdbqt              Prepared receptor files
 ├── ligands/
-│   └── *.pdbqt                       376 prepared ligand files
+│   └── *.pdbqt                       364 prepared ligand files
 ├── poses/
 │   └── *_vs_*.pdbqt                  Best docking pose per job (Phase 7)
 ├── poses_multitarget/
 │   └── *_vs_*.pdbqt                  Best docking pose per job (Phase 7b)
 └── results/
-    ├── docking_results.tsv           Phase 7: all 377 docking results
+    ├── docking_results.tsv           Phase 7: all 364 docking results
     ├── docking_summary.json          Phase 7: summary statistics
     ├── per_target_summary.tsv        Phase 7: per-target statistics
     ├── compound_docking_scores.tsv   Phase 7: per-compound best scores
@@ -4316,9 +4345,9 @@ GENESIS/
 ├── admet/
 │   ├── run_admet_profiling.py      Phase 8 ADMET + mucosal irritation pipeline
 │   └── results/
-│       ├── admet_profiles.tsv      Full ADMET profiles (375 compounds)
+│       ├── admet_profiles.tsv      Full ADMET profiles (361 compounds)
 │       ├── mucosal_safety.tsv      Mucosal irritation risk report
-│       ├── final_candidates.tsv    Prioritized shortlist (345 compounds)
+│       ├── final_candidates.tsv    Prioritized shortlist (316 compounds)
 │       ├── safety_potency_analysis.tsv  Safety-potency relationship
 │       └── admet_summary.json      Pipeline statistics
 ├── results/
@@ -4332,12 +4361,12 @@ GENESIS/
 ### 20.1 Objective
 
 Comprehensive drug-likeness, ADMET prediction, and OSCC-specific mucosal irritation
-safety assessment for all 375 docking-validated compounds from Phases 7/7b.
+safety assessment for all 361 docking-validated compounds from Phases 7/7b.
 
 ### 20.2 Pipeline Architecture
 
 ```
-Phase 7/7b compounds (375)
+Phase 7/7b compounds (361)
   │
   ├─ Module B: Physicochemical (MW, LogP, TPSA, QED, SA, Lipinski/Veber/Ghose/Egan)
   ├─ Module C: ADMET (Caco-2, BBB, PPB, CYP inhibition, hERG)
@@ -4389,36 +4418,39 @@ Mucosal safety receives elevated weight (0.20) reflecting OSCC therapeutic conte
 - **CAUTION:** ADMET ≥ 0.3 AND mucosal ≠ HIGH AND PAINS ≤ 1
 - **FAIL:** All others
 
-### 20.6 Key Results
+### 20.6 Key Results *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Metric | Value |
 |--------|-------|
-| Compounds profiled | 375 |
-| Lipinski pass rate | 92% (345/375) |
-| Mucosal SAFE | 70.1% (263/375) |
-| ADMET PASS | 187 (49.9%) |
-| ADMET CAUTION | 158 (42.1%) |
-| ADMET FAIL | 30 (8.0%) |
-| Triple-validated elite | **12** |
+| Compounds profiled | 361 |
+| Lipinski pass rate | 91.4% (330/361) |
+| Mucosal SAFE | 62.9% (227/361) |
+| ADMET PASS | 136 (37.7%) |
+| ADMET CAUTION | 180 (49.9%) |
+| ADMET FAIL | 45 (12.5%) |
+| Triple-validated elite | **13** |
 
-**Triple-validated elite:** 12 compounds pass all three gates:
-1. Multi-target binder (Phase 7b: ≥5/7 targets at ≤−7.0 kcal/mol)
+**Triple-validated elite:** 13 compounds pass all three gates:
+1. Multi-target binder (Phase 7b: ≥3/7 targets at ≤−7.0 kcal/mol)
 2. ADMET PASS (drug-like + mucosal-safe + cardiac-safe)
 3. Docking validated (Phase 7)
 
-8/12 are CRAVE-generated, all 12 are mucosal SAFE or LOW.
+6/13 are generated (all CRAVE), 7/13 are repurposed; 12/13 are mucosal SAFE, 1/13 is LOW.
 
-### 20.7 Safety-Potency Paradox Resolution
+### 20.7 Safety–Potency Relationship *(refreshed, 2026-09 -- finding has changed direction)*
 
-Phase 7 showed FAIL-flagged compounds dock better (−8.1 vs −7.3 kcal/mol).
-Phase 8 resolves this with the integrated final score:
+With the corrected checkpoint, Phase 7 no longer shows FAIL-flagged compounds
+docking better than PASS-flagged ones (see §18.13): CAUTION now docks strongest
+(mean −8.10), PASS next (−7.67), and FAIL weakest (−7.49). This is reported as an
+open finding rather than a resolved "paradox." Phase 8's integrated final score
+still combines all three evidence streams:
 
 $$\text{Final}_{\text{score}} = 0.30 \cdot \text{dock}_{\text{norm}} + 0.30 \cdot \text{composite}_{\text{norm}} + 0.40 \cdot \text{ADMET}_{\text{score}}$$
 
-The 12 triple-validated elite candidates achieve both strong docking (mean −9.8 kcal/mol)
-and good ADMET (mean 0.588), demonstrating that potency and safety are not mutually
-exclusive — the CRAVE generative model successfully learned to produce potent yet
-drug-like molecules.
+The 13 triple-validated elite candidates achieve both strong docking (mean −9.39 kcal/mol)
+and good ADMET (mean 0.60), demonstrating that potency and safety are not mutually
+exclusive in the compounds that pass all three gates, independent of how docking energy
+and ADMET flag correlate across the full candidate pool.
 
 ---
 
@@ -4461,15 +4493,17 @@ Each target was mapped to KEGG/Reactome pathways relevant to OSCC biology:
 - **Cell Cycle/Apoptosis** (3 targets: AKT1, MDM2, PIK3CA) — p53, cell cycle checkpoints
 - **Inflammation/TME** (1 target: PTGS2) — COX-2, NF-κB, VEGF, TNF
 
-### 21.4 Key Results
+### 21.4 Key Results *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Metric | Value |
 |--------|-------|
-| Network edges | 322 at ≤ −7.0 kcal/mol |
-| Target communities | 1 (fully connected) |
+| Network edges | 326 at ≤ −7.0 kcal/mol |
+| Target–target edges | 21 (fully connected, density 1.0) |
 | Pathways mapped | 16 across 4 categories |
-| Elite enrichment | 1.22× in Inflammation/TME |
-| Mean polypharmacology score | 56.7 |
+| Mean targets per compound | 6.6 |
+| Mean polypharmacology score | 58.7 |
+| Elite mean polypharmacology score | 55.6 (n=13) |
+| Top pathway | PI3K-AKT signalling (hsa04151), 50/50 compounds |
 
 ### 21.5 Figures Generated
 
@@ -4504,26 +4538,44 @@ This generates analogs localized around the elite compound's position in the lea
 5. **ADMET re-scoring**: Phase 8 integrated score (QED, Lipinski, Veber, Caco-2, hERG)
 6. **Quality gate**: PASS/CAUTION + QED ≥ 0.4 + SA ≤ 5.5
 
-### 22.4 Key Results
+### 22.4 Key Results *(refreshed against the corrected checkpoint, 2026-09 -- substantially different scale from earlier report)*
 
 | Metric | Value |
 |--------|-------|
-| Raw samples | 7,200 (12 × 3 × 200) |
-| Valid unique analogs | 69 |
-| ADMET PASS | 33 (47.8%) |
-| ADMET FAIL | **0 (0.0%)** |
-| Improved analogs | 68 |
-| Mean potency similarity | 0.936 |
-| Mean ΔADMET | **+0.276** |
-| Mean ΔQED | +0.047 |
-| Novel scaffolds | 95% |
+| Elite parent compounds | 13 |
+| Raw samples | 1,877 (13 parents × 3 radii × ~50 valid samples) |
+| Valid unique analogs | 890 |
+| ADMET PASS | 372 (41.8%) |
+| ADMET CAUTION | 493 (55.4%) |
+| ADMET FAIL | 25 (2.8%) |
+| Improved analogs (SAR entries) | 854 |
+| Mean Tanimoto to parent | 0.401 |
+| Mean ADMET score | 0.861 |
+| Unique Murcko scaffolds | 13 (across 890 analogs) |
 
-### 22.5 Interpretation
+**Note on scale**: the earlier reported figures (7,200 raw / 69 unique analogs) reflected
+an older run against a different (smaller, pre-correction) elite set. With the corrected
+checkpoint's 13 triple-validated elite parents, the pipeline produces a substantially
+larger analog pool (1,877 raw → 890 unique). The ADMET FAIL rate is also non-zero
+(2.8%, 25 compounds), unlike the earlier claim of a 0.0% FAIL rate.
 
-- **Zero FAIL rate** demonstrates inheritance of drug-like properties from ADMET-PASS parents via latent-space proximity
-- **CRAVE-generated parents produce more analogs** (5–23 per parent) than repurposed compounds (0–1), because CRAVE molecules are native to the decoder's learned distribution
-- **High potency retention** (0.936 mean cosine similarity) confirms latent perturbation preserves the key structural features that drive target affinity
-- **GEN_00034 and GEN_00041** are the most productive lead optimization starting points
+### 22.5 Interpretation *(refreshed, 2026-09)*
+
+- **Low FAIL rate (2.8%)** demonstrates substantial inheritance of drug-like properties
+  from ADMET-favorable parents via latent-space proximity, though it is no longer
+  exactly zero as previously claimed
+- **Mean Tanimoto similarity to parent of 0.401** indicates analogs are structurally
+  related but not trivial copies of their elite parent -- consistent with meaningful
+  exploration around each parent's latent-space neighborhood rather than a scaffold-hop
+  or a near-duplicate
+- Only **13 unique Murcko scaffolds** were observed across all 890 analogs (one per
+  elite parent on average), confirming that scaffold-constrained perturbation, by
+  design, preserves each parent's core scaffold rather than generating novel scaffolds
+  -- the earlier "95% novel scaffolds" claim does not hold under this metric and has
+  been removed rather than restated
+- Per-parent analog counts and specific "most productive parent" claims (previously
+  naming GEN_00034 and GEN_00041) were not re-verified against the fresh
+  `analogs_all.tsv` in this pass and should be treated as unconfirmed until checked
 
 ---
 
@@ -4531,7 +4583,7 @@ This generates analogs localized around the elite compound's position in the lea
 
 ### 23.1 Rationale
 
-All preceding phases generate independent, disconnected data streams: CRAVE produces 1000 novel SMILES (Phase 3.8), repurposing screens 23,308 known compounds (Phase 6), docking scores 377 single-target and 350 multi-target binding energies (Phases 7/7b), ADMET profiles 375 compounds (Phase 8), network pharmacology maps pathway connectivity (Phase 9a), and lead optimization generates 69 analogs (Phase 9b). Phase 10 serves as the **integration and prioritization layer** — merging all evidence streams into a single ranked candidate list suitable for experimental prioritization.
+All preceding phases generate independent, disconnected data streams: CRAVE produces 1000 novel SMILES (Phase 3.8), repurposing screens 23,308 known compounds (Phase 6), docking scores 364 single-target and 350 multi-target binding energies (Phases 7/7b), ADMET profiles 361 compounds (Phase 8), network pharmacology maps pathway connectivity (Phase 9a), and lead optimization generates 890 analogs (Phase 9b). Phase 10 serves as the **integration and prioritization layer** — merging all evidence streams into a single ranked candidate list suitable for experimental prioritization.
 
 A critical addition is **Nearest Known Analog (NKA) analysis**, which contextualizes every generated compound by identifying its closest relatives in known chemical space. This replaces the misleading concept of "parent compound" (which implies derivation) with a scientifically precise multi-reference similarity profile.
 
@@ -4581,34 +4633,41 @@ Based on maximum Tanimoto similarity to the reference library:
 | `scaffold_hop` | $0.4 \leq T < 0.7$ | Same pharmacophore, different scaffold |
 | `novel` | $< 0.4$ | Structurally distinct from known space |
 
-#### 23.2.5 NKA Results
+#### 23.2.5 NKA Results *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Metric | Value |
 |--------|-------|
 | Generated compounds analyzed | 1,000 |
 | Reference library size | 71,965 |
-| Mean max Tanimoto | 0.297 |
-| Novel (T < 0.4) | 875 (87.5%) |
-| Scaffold hop (0.4 ≤ T < 0.7) | 98 (9.8%) |
+| Mean max Tanimoto | 0.406 |
+| Novel (T < 0.4) | 532 (53.2%) |
+| Scaffold hop (0.4 ≤ T < 0.7) | 441 (44.1%) |
 | Close analog (T ≥ 0.7) | 27 (2.7%) |
 
-The **87.5% novel rate** confirms that CRAVE's latent-space generation genuinely explores uncharted chemical territory rather than memorizing training data. The mean Tanimoto of 0.297 places the average generated compound well below the scaffold-hop threshold, indicating true structural diversity.
+The **53.2% novel rate** (down from an earlier reported 87.5%) still confirms that a
+majority of CRAVE's latent-space generations fall outside the close-analog and
+scaffold-hop ranges, though with the corrected checkpoint a much larger share (44.1%,
+up from 9.8%) now falls in the scaffold-hop band -- same pharmacophore, different
+scaffold -- rather than being maximally novel. The close-analog rate (2.7%) is
+unchanged. The mean Tanimoto (0.406) is essentially unchanged from the earlier 0.297
+only in the sense that both are below the close-analog threshold; the underlying
+distribution has shifted materially toward the scaffold-hop band.
 
 ### 23.3 Evidence Integration & Data Merge
 
 All pipeline data sources are merged on compound identifier and canonical SMILES:
 
 ```
-ADMET (345 compounds)           ─┐
-Single-target docking (377)      │
-Multi-target docking (350)       │──→ Master DataFrame (1,177 compounds)
-Network pharmacology metrics     │      × 110+ columns
-Selectivity profiles (50)        │
-Lead optimization analogs (69)   │
-All 1000 generated SMILES       ─┘
+ADMET (361 compounds)            ─┐
+Single-target docking (364)       │
+Multi-target docking (350)        │──→ Master DataFrame (1,161 compounds)
+Network pharmacology metrics      │      × 110+ columns
+Selectivity profiles (50)         │
+Lead optimization analogs (890)   │
+All 1000 generated SMILES        ─┘
 ```
 
-Compounds not present in ADMET or docking pipelines (i.e., the 832 generated compounds that were not in Phase 4's top-hit list) are still included with their NKA profiles and QED/SA scores, ensuring **no novel compound is excluded**.
+Compounds not present in ADMET or docking pipelines (i.e., the generated compounds that were not in Phase 4's top-hit list) are still included with their NKA profiles and QED/SA scores, ensuring **no novel compound is excluded**. The final merged ranking table (`master_ranked_all.tsv`) contains 1,161 compounds *(refreshed against the corrected checkpoint, 2026-09; was reported as 1,177)*: 987 generated and 129 repurposed.
 
 ### 23.4 GENESIS Score — Multi-Component Weighted Ranking
 
@@ -4647,8 +4706,10 @@ Compounds are classified by data completeness:
 | Tier | Criteria | Count |
 |------|----------|-------|
 | Tier-1 (fully validated) | Docking + ADMET + Multi-target data | 46 |
-| Tier-3 (partial validation) | Docking OR ADMET | 299 |
-| Tier-4 (prediction only) | QED/SA/NKA only | 832 |
+| Tier-3 (partial validation) | Docking OR ADMET | 270 |
+| Tier-4 (prediction only) | QED/SA/NKA only | 845 |
+
+*(Refreshed against the corrected checkpoint, 2026-09; was 46/299/832.)*
 
 ### 23.5 Clinical Annotation
 
@@ -4670,55 +4731,64 @@ For each Tier-1 compound, a comprehensive dossier is generated containing:
 
 ### 23.7 Key Results
 
-#### 23.7.1 Score Distribution by Tier
+#### 23.7.1 Score Distribution by Tier *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Tier | Mean Score | Std | Min | Max |
 |------|-----------|-----|-----|-----|
-| Tier-1 (46 compounds) | 0.530 | 0.063 | 0.410 | 0.754 |
-| Tier-3 (299 compounds) | 0.304 | 0.036 | 0.165 | 0.434 |
-| Tier-4 (832 compounds) | 0.053 | 0.016 | 0.005 | 0.132 |
+| Tier-1 (46 compounds) | 0.565 | 0.071 | 0.448 | 0.716 |
+| Tier-3 (270 compounds) | 0.314 | 0.039 | 0.163 | 0.421 |
+| Tier-4 (845 compounds) | 0.054 | 0.014 | 0.005 | 0.125 |
 
 The score separation between tiers confirms the evidence-completeness penalty is working correctly — fully validated compounds are properly elevated over prediction-only candidates.
 
-#### 23.7.2 Top 10 Compounds
+#### 23.7.2 Top 10 Compounds *(refreshed against the corrected checkpoint, 2026-09 -- the top compound identity has changed)*
 
 | Rank | ID | Score | Source | ADMET | Novelty |
 |------|----|-------|--------|-------|---------|
-| 1 | REP_CHEMBL1879463 (Dactolisib) | 0.754 | Repurposed | PASS | close_analog |
-| 2 | REP_CHEMBL5439799 (CC-223) | 0.669 | Repurposed | PASS | close_analog |
-| 3 | REP_CHEMBL1236962 | 0.640 | Repurposed | PASS | close_analog |
-| 4 | REP_CHEMBL3301610 | 0.640 | Repurposed | PASS | close_analog |
-| 5 | REP_CHEMBL521851 (Pictilisib) | 0.625 | Repurposed | PASS | close_analog |
-| 6 | REP_CHEMBL1908391 | 0.613 | Repurposed | PASS | close_analog |
-| **7** | **GEN_00045** | **0.584** | **Generated** | **PASS** | **novel** |
-| 8 | REP_CHEMBL3408248 | 0.577 | Repurposed | PASS | close_analog |
-| 9 | REP_CHEMBL604038 | 0.571 | Repurposed | PASS | close_analog |
-| 10 | REP_CHEMBL202887 | 0.559 | Repurposed | PASS | close_analog |
+| 1 | REP_CHEMBL1236962 (Omipalisib) | 0.716 | Repurposed | CAUTION | close_analog |
+| 2 | REP_CHEMBL4800252 (Risovalisib) | 0.688 | Repurposed | PASS | close_analog |
+| 3 | REP_CHEMBL3545235 (Simotinib) | 0.684 | Repurposed | CAUTION | close_analog |
+| 4 | REP_CHEMBL554 (Lapatinib) | 0.682 | Repurposed | CAUTION | close_analog |
+| **5** | **GEN_00182** | **0.668** | **Generated** | **CAUTION** | **novel** |
+| 6 | REP_CHEMBL387748 (IN-1166) | 0.658 | Repurposed | CAUTION | close_analog |
+| 7 | GEN_00133 | 0.652 | Generated | CAUTION | scaffold_hop |
+| 8 | GEN_00045 | 0.652 | Generated | CAUTION | scaffold_hop |
+| 9 | REP_D0RV9D | 0.646 | Repurposed | CAUTION | close_analog |
+| 10 | REP_CHEMBL379300 (A-443654) | 0.630 | Repurposed | CAUTION | close_analog |
 
-**GEN_00045** at rank 7 is the **highest-ranked CRAVE-generated compound** — a structurally novel molecule that passes ADMET screening and achieves competitive docking scores (ΔG = −10.5 kcal/mol against FGFR1). This demonstrates that the generative pipeline can produce compounds that compete with established drug candidates.
+**GEN_00182** at rank 5 is now the **highest-ranked CRAVE-generated compound** (was
+GEN_00045 at rank 7 in the earlier report; GEN_00045 is still present, now at rank 8).
+This demonstrates that the generative pipeline continues to produce compounds that
+compete with established, clinically annotated repurposing candidates.
 
-#### 23.7.3 Top Generated Compounds
+#### 23.7.3 Top Generated Compounds *(refreshed, 2026-09)*
 
-| Rank | ID | Score | ADMET | Novelty | Notes |
-|------|----|-------|-------|---------|-------|
-| 7 | GEN_00045 | 0.584 | PASS | novel | Best generated; FGFR1 inhibitor |
-| 12 | GEN_00028 | 0.551 | PASS | novel | Multi-target active |
-| 15 | GEN_00102 | 0.541 | PASS | novel | - |
-| 16 | GEN_00034 | 0.539 | FAIL | scaffold_hop | Lead opt parent; 23 analogs |
-| 21 | GEN_00041 | 0.526 | PASS | novel | Lead opt parent |
-| 25 | GEN_00071 | 0.522 | PASS | scaffold_hop | - |
+| Rank | ID | Score | ADMET | Novelty |
+|------|----|-------|-------|---------|
+| 5 | GEN_00182 | 0.668 | CAUTION | novel |
+| 7 | GEN_00133 | 0.652 | CAUTION | scaffold_hop |
+| 8 | GEN_00045 | 0.652 | CAUTION | scaffold_hop |
+| 11 | GEN_00020 | 0.626 | CAUTION | scaffold_hop |
+| 13 | GEN_00044 | 0.616 | CAUTION | novel |
+| 14 | GEN_00069 | 0.603 | CAUTION | scaffold_hop |
+| 15 | GEN_00194 | 0.598 | CAUTION | novel |
+| 16 | GEN_00108 | 0.597 | CAUTION | scaffold_hop |
 
-#### 23.7.4 Pipeline Summary Statistics
+The previously named lead-optimization parents "GEN_00034" and "GEN_00041" are not
+re-confirmed as top performers in this refreshed ranking and have been replaced with
+the compounds actually observed in the current `master_ranked_all.tsv`.
+
+#### 23.7.4 Pipeline Summary Statistics *(refreshed against the corrected checkpoint, 2026-09)*
 
 | Metric | Value |
 |--------|-------|
-| Total compounds ranked | 1,177 |
-| Recommended (validated) | 345 |
+| Total compounds ranked | 1,161 |
+| Recommended (validated) | 316 |
 | Tier-1 dossiers generated | 46 |
-| Sources | 991 generated + 156 repurposed |
-| ADMET PASS (of profiled) | 28 (60.8%) |
-| ADMET CAUTION | 4 (8.7%) |
-| ADMET FAIL | 14 (30.4%) |
+| Sources | 987 generated + 129 repurposed |
+| Tier-1 ADMET PASS | 13 (28.3%) |
+| Tier-1 ADMET CAUTION | 33 (71.7%) |
+| Tier-1 ADMET FAIL | 0 (0.0%) |
 | Output columns | 110+ |
 
 ### 23.8 Output Files
@@ -4726,18 +4796,18 @@ The score separation between tiers confirms the evidence-completeness penalty is
 | File | Size | Contents |
 |------|------|----------|
 | `nka_all_generated.tsv` | 271 KB | NKA for all 1,000 generated compounds |
-| `nka_all_compounds.tsv` | 318 KB | NKA for all 1,156 compounds (generated + repurposed) |
-| `master_ranked_all.tsv` / `.xlsx` | 631 KB / 608 KB | Complete ranked list (1,177 rows × 110+ columns) |
-| `master_ranked_recommended.tsv` / `.xlsx` | 258 KB / 215 KB | Validated subset (345 recommendations) |
+| `nka_all_compounds.tsv` | 318 KB | NKA for all 1,161 compounds (generated + repurposed) |
+| `master_ranked_all.tsv` / `.xlsx` | 631 KB / 608 KB | Complete ranked list (1,161 rows × 110+ columns) |
+| `master_ranked_recommended.tsv` / `.xlsx` | 258 KB / 215 KB | Validated subset (316 recommendations) |
 | `compound_dossiers.tsv` / `.xlsx` | 33 KB / 237 KB | Tier-1 dossiers (46 compounds, multi-sheet Excel) |
 
 ### 23.9 Interpretation
 
 1. **Repurposed compounds dominate the top ranks** — this is expected and scientifically correct. Repurposed compounds have known clinical data, established binding profiles, and close analogs in the reference library, all of which boost their GENESIS score. They represent the **lowest-risk, fastest-to-clinic** options.
 
-2. **GEN_00045's rank-7 position is remarkable** — a de novo generated compound with no prior clinical history competes directly with established drug candidates. Its novel scaffold (Tanimoto < 0.4 to any known compound) combined with ADMET PASS and strong FGFR1 binding (ΔG = −10.5) makes it the strongest case for experimental validation of a GENESIS-generated compound.
+2. **GEN_00182's rank-5 position is remarkable** *(refreshed, 2026-09; was GEN_00045 at rank 7 with ΔG = −10.5)* — a de novo generated compound with no prior clinical history competes directly with established drug candidates. It is classified `novel` (below the scaffold-hop threshold to any known compound) and combines a CAUTION ADMET flag with a strong genesis_score (0.668), making it the strongest current case for experimental validation of a GENESIS-generated compound.
 
-3. **The 87.5% novelty rate validates CRAVE's generative capacity** — the generator is not simply memorizing and replaying training data. The mean Tanimoto of 0.297 to the nearest known compound places most generated molecules in genuinely uncharted chemical territory.
+3. **The 53.2% novelty rate validates CRAVE's generative capacity** *(refreshed, 2026-09; was reported as 87.5%)* — the generator is not simply memorizing and replaying training data, though a larger share of outputs (44.1%) now fall in the scaffold-hop band than previously reported. The mean Tanimoto of 0.406 to the nearest known compound places most generated molecules outside the close-analog range, though closer to known chemical space than the earlier analysis suggested.
 
 4. **Evidence-completeness penalty prevents false positives** — without this penalty, Tier-4 compounds (with only QED data) would score artificially high. The $\sqrt{\text{completeness}}$ multiplier ensures that high scores require multi-level validation evidence, while still preserving rank order within each tier.
 
@@ -4763,24 +4833,29 @@ Validate the top docking poses from Phases 7/7b through explicit-solvent molecul
 | Ionic strength | 0.15 M NaCl |
 | Environment | conda `md_env` (Python 3.11) |
 
-### 24.3 Simulation Protocol
+### 24.3 Simulation Protocol *(refreshed against the corrected checkpoint, 2026-09 -- shortlist compounds have changed)*
 
 **12 simulations planned** — top elite compounds paired with their best-scoring target:
 
-| Compound | Target | ΔG (kcal/mol) |
-|----------|--------|---------------|
-| REP_CHEMBL5439799 | FGFR1 (4V04) | −10.6 |
-| GEN_00045 | FGFR1 (4V04) | −10.5 |
-| REP_CHEMBL521851 | EGFR (4HJO) | −10.2 |
-| GEN_00028 | PTGS2 (3LN1) | −10.3 |
-| GEN_00034 | FGFR1 (4V04) | −9.3 |
-| GEN_00102 | PTGS2 (3LN1) | −9.4 |
-| GEN_00041 | PTGS2 (3LN1) | −9.4 |
-| GEN_00128 | FGFR1 (4V04) | −9.0 |
-| REP_CHEMBL1231018 | PTGS2 (3LN1) | −10.4 |
-| GEN_00071 | EGFR (4HJO) | −9.4 |
-| GEN_00054 | FGFR1 (4V04) | −8.8 |
-| GEN_00082 | EGFR (4HJO) | −8.7 |
+| Compound | Target | ΔG (kcal/mol) | Source |
+|----------|--------|---------------|--------|
+| D0RV9D | FGFR1 (4V04) | −11.21 | Repurposed |
+| BAG956 | EGFR (4HJO) | −11.03 | Repurposed |
+| A-443654 | EGFR (4HJO) | −10.88 | Repurposed |
+| UCN-01 | AKT1 (3CQW) | −10.45 | Repurposed |
+| RISOVALISIB | EGFR (4HJO) | −10.40 | Repurposed |
+| OMIPALISIB | EGFR (4HJO) | −10.19 | Repurposed |
+| GEN_00045 | EGFR (4HJO) | −10.13 | Generated |
+| GEN_00194 | EGFR (4HJO) | −10.03 | Generated |
+| GEN_00182 | EGFR (4HJO) | −10.02 | Generated |
+| GEN_00108 | EGFR (4HJO) | −9.93 | Generated |
+| GEN_00126 | EGFR (4HJO) | −9.73 | Generated |
+| GEN_00020 | EGFR (4HJO) | −9.67 | Generated |
+
+Note: this list is a *proposed* MD validation shortlist (Phase 11, not yet executed
+as of this writing) and has been refreshed to reflect the current top docking hits;
+the earlier list (headed by REP_CHEMBL5439799 and GEN_00045 vs FGFR1) reflected the
+pre-correction docking run and is superseded above.
 
 ### 24.4 Pipeline Architecture
 
