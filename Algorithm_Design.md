@@ -6,22 +6,43 @@
 architecture design, implementation decisions, parameter choices, and biological context
 for all algorithms used in the GENESIS study.*
 
-> **Note on numeric results (2026-09-19, final update)**: This document's
+> **Note on numeric results (2026-09-19, final update, second pass)**: This document's
 > algorithm, architecture, and loss-function descriptions have been reviewed and
 > corrected against the current implementation (see the checkpoint-selection fix in
 > §5.3.2 and the Bug Fixes registry in §15.3). The per-phase result numbers in §17
 > (repurposing), §18 (docking), §20 (ADMET), §21 (network pharmacology), §22 (lead
-> optimization), §23 (final ranking), and §14.4 (MOSES/GuacaMol generative
-> benchmarks) have all been individually re-queried or recomputed against current
-> result files and corrected in place, including several qualitative reversals from
-> the earlier report that are called out explicitly where they occur rather than
-> silently overwritten (e.g., generated vs. repurposed docking comparison in §18.7,
-> the safety-potency relationship in §18.13/§20.7, CGLF's scaffold-fidelity claim in
-> §14.4.6). §14.4.6's MOSES/GuacaMol/FCD benchmarks are now fully 3-seed (42/123/456)
+> optimization), §23 (final ranking), §14.4 (MOSES/GuacaMol generative
+> benchmarks), and §25 (compound category annotation) have all been individually
+> re-queried or recomputed against current result files and corrected in place,
+> including several qualitative reversals from the earlier report that are called
+> out explicitly where they occur rather than silently overwritten (e.g., generated
+> vs. repurposed docking comparison in §18.7, the safety-potency relationship in
+> §18.13/§20.7, CGLF's scaffold-fidelity claim in §14.4.6).
+>
+> **A second, deeper pass (2026-09-19)** discovered that §§8–13's per-method "Novelty
+> Assessment & Empirical Validation" subsections, and the master Table 3 in §14.4.1,
+> still cited the *original* pre-correction, 3-seed {42,123,456} generative evaluation
+> (dated 2026-03-25 in the earlier draft) rather than the current, corrected 5-seed
+> {42,123,456,789,1337} evaluation. All of §§8.11.2, 9.9.2, 10.13.1, 10.13.4, 11.11.2,
+> 11.11.3, 12.12.2, 13.8, 13.11.1, 13.11.2, and 14.4.1–14.4.5 have now been rewritten
+> against the 5-seed data. This surfaced three qualitative reversals that are
+> explicitly retracted/reframed rather than silently patched: cVAE's claimed
+> "statistically significant potency improvement over VAE" does not hold under the
+> corrected variance (§9.9.2); CGLF's claimed "best SA score of all methods" is
+> reversed — CGLF's QED/SA are now worse than the VAE baseline (§12.12.2); and
+> CRAVE's headline "seed-invariant, SD=0.000" claim does not hold under the full
+> 5-seed set (true SD=0.033) — CRAVE still has the lowest *relative* variance
+> (coefficient of variation) among potency-directed methods, but is not
+> deterministic (§13.11.1). §25's category-annotation results were also stale
+> (pre-dating the checkpoint fix) and have been rerun and corrected in place.
+>
+> §14.4.6's MOSES/GuacaMol/FCD benchmarks are now fully 3-seed (42/123/456)
 > mean ± SD, including FCD — installing the `fcd` package turned out to be cheap (a
 > PyTorch-based reimplementation with no new heavy dependencies), so the earlier
 > "genuinely open, needs new infrastructure" assessment for FCD did not hold up
-> either; it only took actually attempting the install to find that out.
+> either; it only took actually attempting the install to find that out. This
+> 3-seed external-benchmark evaluation is intentionally separate from, and does not
+> need to match, the 5-seed internal Table 3 evaluation above.
 > `documents/manuscript_ground_truth.json`, together with
 > `documents/verify_manuscript_numbers.py`, remains the authoritative,
 > independently re-derivable source for current result numbers.
@@ -160,7 +181,7 @@ from the actual drug discovery objective.
 | `compound_embeddings.mmap` | (715,162 × 768) | float16 | MolDeBERTa [CLS] |
 | `compound_ids.npy` | (715,162,) | str | ChEMBL IDs |
 | `compound_index.pkl` | 692,644 entries | dict | Data preparation |
-| `positives.tsv` / `negatives.tsv` | ~21K / ~171K | TSV | Negative mining |
+| `positives.tsv` / `negatives.tsv` | 49,312 / 643,332 | TSV | Negative mining |
 | `scaffold_groups.pkl` | compound↔scaffold maps | dict | `compute_scaffolds.py` |
 | `target_families.pkl` | compound→family map | dict | `compute_scaffolds.py` |
 | `splits.json` | 3 splits × 2 lists | JSON | Scaffold-aware splitting |
@@ -233,13 +254,13 @@ Positive compounds are OSCC-active molecules from ChEMBL with:
 - Measured bioactivity (IC₅₀, EC₅₀, Ki, Kd) against OSCC-relevant targets
 - pChEMBL values for potency quantification
 
-**Potency classification** (ordinal, 3 tiers):
+**Potency classification** (ordinal, 3 tiers) *(verified against `modeling/positives.tsv`'s actual `pchembl`-by-`potency_class_num` ranges, `generative/compute_centroid.py`'s code comment, and cross-checked against `documents/generate_manuscript_v2.py`'s Table 1 description — an earlier revision of this document briefly stated the wrong thresholds, 5.0–6.5/6.5–8.0/≥8.0; corrected back here)*:
 
-| Class | Label | pChEMBL Range | Biological Meaning |
-|-------|-------|---------------|-------------------|
-| 1 | Active | 5.0 – 6.5 | Measurable activity (μM range) |
-| 2 | Potent | 6.5 – 8.0 | Sub-μM activity |
-| 3 | Very Potent (VP) | ≥ 8.0 | Low-nM activity |
+| Class | Label | pChEMBL Range | Biological Meaning | n (positives.tsv) |
+|-------|-------|---------------|-------------------|------|
+| 1 | Active | 5.0 – 6.0 | Measurable activity (μM range) | 8,971 |
+| 2 | Potent | 6.0 – 7.0 | Sub-μM activity | 10,021 |
+| 3 | Very Potent (VP) | ≥ 7.0 | Low-nM activity (max observed 11.0) | 22,171 |
 
 This ordinal structure is critical: the contrastive model learns to preserve this
 gradient in the projected space, and the generative models use it as conditioning.
@@ -820,7 +841,7 @@ checkpoint rather than the run's true best.
 |-----------|-------|-----------|
 | Optimizer | AdamW | Weight decay regularization for generalizable projections |
 | Learning rate | 3 × 10⁻⁴ | Standard for MLP projection heads; warm enough for fast convergence |
-| Weight decay | 1 × 10⁻⁴ | Mild L2 penalization to prevent overfitting on ~21K positives |
+| Weight decay | 1 × 10⁻⁴ | Mild L2 penalization to prevent overfitting on ~49K positives |
 | Scheduler | CosineAnnealingLR | Smooth decay avoids sharp LR drops that disrupt contrastive structure |
 | Min LR | 1 × 10⁻⁶ | Prevents complete stalling in final epochs |
 | Gradient clipping | max_norm = 1.0 | Stabilizes training with mixed batch compositions |
@@ -952,8 +973,8 @@ a well-defined VP cluster with clear geometric boundaries.
 
    | Test | Metric | Proof of retention |
    |------|--------|--------------------|
-   | T3 Target-Switch AUC | **0.958** | Model assigns multi-target compounds to the correct OSCC target centroid 96% of the time |
-   | T7 Cross-Pathway AUC | **0.860** | EGFR VP centroid correctly ranks FGFR1/AKT1 compounds — pathway-level target topology preserved |
+   | T3 Target-Switch AUC | **0.967** *(3-seed mean; see §5.5 evaluation battery / Table 1)* | Model assigns multi-target compounds to the correct OSCC target centroid ~97% of the time |
+   | T7 Cross-Pathway AUC | **0.860** *(not independently re-verified against the corrected checkpoint this session — flagged as provisional)* | EGFR VP centroid correctly ranks FGFR1/AKT1 compounds — pathway-level target topology preserved |
    | Fig 3 t-SNE target coloring | Visual clusters | EGFR, MDM2, mTOR form visually coherent tight clusters *within* the contrastive space |
    | **Fig 6a** centroid heatmap | Raw off-diag 0.97–0.99 → Proj 0.96–0.99 | All OSCC targets look identical in raw space; contrastive space *increases* target distinctness (COX-2 / MDM2 centroids: 0.96) |
    | **Fig 6b** potency gradient | Flat raw lines → strict Active<Potent<VP in proj | Every named target preserves within-target potency ordering in contrastive space (CDK4 steepest: 0.75→0.87→0.97) |
@@ -1002,7 +1023,7 @@ potency bins** with specific weight values (1.0/0.7/0.4) reflecting pharmacologi
 reasoning: a nanomolar-to-micromolar IC₅₀ boundary carries qualitative biological
 meaning (binding mode change, selectivity cliff) that a linear regression weight
 misses. The discrete bins + manual weights inject domain inductive bias that a purely
-data-driven weighting cannot capture from limited OSCC training data (~21K positives).
+data-driven weighting cannot capture from limited OSCC training data (~49K positives).
 
 *Claim strength*: Moderate-to-strong — a **domain-specialized variant** of ordinal
 contrastive learning. The specific formulation with the $W$ matrix + cross-target
@@ -1585,21 +1606,21 @@ role as the shared generative substrate within a contrastive-guided pipeline.
 
 #### 8.11.2 Empirical Evidence
 
-**Multi-seed results** (Table 3, §14.4):
+**Multi-seed results** (Table 3, §14.4; 5-seed mean \u00b1 SD, seeds 42/123/456/789/1337):
 
-| Metric | VAE (mean ± SD) | Interpretation |
+| Metric | VAE (mean \u00b1 SD) | Interpretation |
 |---|---|---|
-| Validity | 100.0 ± 0.0% | SELFIES guarantee holds |
-| Uniqueness | 98.4 ± 0.5% | Near-perfect; GRU decoder avoids mode collapse |
-| Novelty | 99.5 ± 0.1% | Generates genuinely new molecules |
-| OSCC Potency | 0.408 ± 0.013 | Low — expected; no potency guidance |
-| QED | 0.440 ± 0.012 | Moderate drug-likeness |
-| SA Score | 4.795 ± 0.026 | Moderate synthesisability |
-| Diversity | **0.916 ± 0.001** | **Highest across all methods** |
-| Scaffold Nov. | 96.7 ± 0.6% | Strong scaffold exploration |
+| Validity | 100.0 \u00b1 0.0% | SELFIES guarantee holds |
+| Uniqueness | 98.7 \u00b1 0.6% | Near-perfect; GRU decoder avoids mode collapse |
+| Novelty | 99.5 \u00b1 0.2% | Generates genuinely new molecules |
+| OSCC Potency | 0.196 \u00b1 0.019 | Low \u2014 expected; no potency guidance |
+| QED | 0.435 \u00b1 0.011 | Moderate drug-likeness |
+| SA Score | 4.801 \u00b1 0.019 | Moderate synthesisability |
+| Diversity | **0.916 \u00b1 0.002** | **Highest across all methods** |
+| Scaffold Nov. | 96.7 \u00b1 0.4% | Strong scaffold exploration |
 
-**Key finding**: The VAE achieves the **highest diversity** (0.916) of any method — even higher
-than CGLF (0.901) and CRAVE (0.862). This confirms that the prior $\mathcal{N}(\mathbf{0}, \mathbf{I})$
+**Key finding**: The VAE achieves the **highest diversity** (0.916) of any method \u2014 higher
+than CGLF (0.888) and CRAVE filtered (0.819). This confirms that the prior $\\mathcal{N}(\\mathbf{0}, \\mathbf{I})$
 covers a broad region of the chemical manifold. The trade-off is clear: maximum diversity at the
 cost of potency direction. The VAE's role is to establish this diverse coverage, which downstream
 methods (RL-VAE, CRAVE) then selectively exploit.
@@ -1686,7 +1707,7 @@ for the CGLF method to operate in the same projection-aligned latent space.
 
 **Why the 133-d conditioning vector constitutes information leakage**:
 
-The 133-d conditioning vector $\mathbf{c}_{133} = [\mathbf{c}_\text{VP} \in \mathbb{R}^{128}, \text{onehot} \in \mathbb{R}^4, \text{sim} \in \mathbb{R}^1]$ contains the full 128-d L2-normalised VP centroid. The VP centroid is the mean of all 3,603 Very Potent training compound contrastive projections; it encodes the average location of the VP cluster in the 128-d hypersphere.
+The 133-d conditioning vector $\mathbf{c}_{133} = [\mathbf{c}_\text{VP} \in \mathbb{R}^{128}, \text{onehot} \in \mathbb{R}^4, \text{sim} \in \mathbb{R}^1]$ contains the full 128-d L2-normalised VP centroid. The VP centroid is the mean of all 17,441 Very Potent training compound contrastive projections; it encodes the average location of the VP cluster in the 128-d hypersphere.
 
 When the FiLM network receives $\mathbf{c}_{133}$, the affine transforms $\gamma(\mathbf{c}_{133})$ and
 $\beta(\mathbf{c}_{133})$ can learn, in the first layer alone:
@@ -1742,7 +1763,7 @@ This is distinct from the unconditional VAE question (*"What molecules look like
 Scientifically, the conditioning on `sim(z_proj, c_VP) = 0.9` is equivalent to saying:
 *"Generate molecules whose molecular BERT embedding, after contrastive projection, lies within
 the 0.9-cosine shell around the VP centroid."* Since the VP centroid encodes the average pharmacophoric
-and electronic signature of the 3,603 most potent OSCC-active compounds (pChEMBL ≥ 7), this constraint
+and electronic signature of the 17,441 most potent OSCC-active compounds (pChEMBL ≥ 7), this constraint
 biases generation toward molecules that likely interact with OSCC molecular targets through mechanisms
 similar to known highly active compounds.
 
@@ -1787,26 +1808,34 @@ on downstream method compatibility.
 
 *Claim strength*: Moderate — a design insight that enables the multi-method pipeline.
 
-#### 9.9.2 Empirical Evidence
+#### 9.9.2 Empirical Evidence *(revised, 2026-09-19, against the corrected 5-seed evaluation \u2014 the original single-seed-adjacent claim below does not survive the full seed set)*
 
-**Multi-seed results** (Table 3, §14.4):
+**Multi-seed results** (Table 3, \u00a714.4; 5-seed mean \u00b1 SD, seeds 42/123/456/789/1337):
 
-| Metric | VAE | cVAE | Δ | Interpretation |
+| Metric | VAE | cVAE | \u0394 | Interpretation |
 |---|---|---|---|---|
-| Potency | 0.408 ± 0.013 | **0.444 ± 0.015** | +8.8% | Conditioning works but is mild |
-| pChEMBL | 3.059 ± 0.069 | **3.375 ± 0.106** | +10.3% | Predicted activity increases |
-| VP Fraction | 44.8 ± 0.7% | **48.2 ± 1.5%** | +7.6% | More VP-class molecules |
-| QED | **0.440 ± 0.012** | 0.420 ± 0.013 | −4.5% | Slight drug-likeness cost |
-| SA Score | 4.795 ± 0.026 | **4.793 ± 0.052** | ≈0 | No synthesis impact |
-| Diversity | **0.916 ± 0.001** | 0.914 ± 0.001 | −0.2% | Negligible diversity loss |
+| Potency | 0.196 \u00b1 0.019 | 0.361 \u00b1 0.185 | +84.2% (nominal) | Large mean gap, but driven almost entirely by one outlier seed \u2014 see below |
+| pChEMBL | 2.134 \u00b1 0.137 | 3.669 \u00b1 1.709 | +72.0% (nominal) | Same outlier-driven pattern |
+| VP Fraction | 25.2 \u00b1 1.3% | 44.8 \u00b1 22.9% | +77.8% (nominal) | SD (22.9pp) exceeds the mean difference itself |
+| QED | 0.435 \u00b1 0.011 | 0.375 \u00b1 0.091 | \u221213.8% | Drug-likeness cost, direction unchanged from earlier report |
+| SA Score | 4.801 \u00b1 0.019 | 5.105 \u00b1 0.493 | +6.3% (worse) | Modest synthesis cost |
+| Diversity | 0.916 \u00b1 0.002 | 0.889 \u00b1 0.053 | \u22123.0% | Small diversity cost |
 
-**Key finding**: The 5-d FiLM conditioning provides a **statistically significant but modest**
-potency improvement (+8.8%) over the unconditional VAE, without meaningful diversity loss.
-The 95% CIs are non-overlapping for potency ([0.395, 0.421] vs [0.433, 0.461]), confirming
-the improvement is real. The small magnitude reflects the inherent limitation of FiLM modulation
-of initial hidden states — it provides a *bias* toward potent structures but cannot override
-the decoder's learned distribution over the 25-token sequence. This positions cVAE as a
-controlled baseline — better than random VAE sampling, but far below RL-guided methods.
+**Honest reassessment**: the earlier version of this section reported a "statistically significant
+but modest" +8.8% potency improvement with non-overlapping 95% CIs. That claim was based on an
+older 3-seed evaluation and **does not hold** under the current, corrected 5-seed evaluation.
+Per-seed cVAE potency values are 0.225 (seed 42), 0.270 (123), 0.256 (456), 0.378 (789), and
+**0.675 (1337)** \u2014 four seeds cluster in a narrow 0.225\u20130.378 band only modestly above VAE's
+0.196, while seed 1337 is a large outlier (also showing a correspondingly different QED = 0.213
+vs. ~0.42 for the other four seeds, and VP fraction 84% vs. ~30\u201345%), consistent with cVAE
+occasionally landing in a qualitatively different generation regime rather than reliably producing
+a uniformly higher-potency output. Approximate 95% CIs (normal approximation, mean \u00b1 1.96\u00b7SD/\u221a5)
+are VAE [0.179, 0.213] and cVAE [0.199, 0.523] \u2014 these **overlap**, so the improvement can no
+longer be described as statistically robust with the current seed set. The qualitative direction
+(FiLM conditioning nudges potency upward on average) is still plausible and consistent with the
+four non-outlier seeds, but the magnitude and statistical confidence claimed in the earlier report
+were overstated. This is reported transparently rather than silently re-asserted, consistent with
+this document's broader re-verification pass.
 
 #### 9.9.3 What Is Not Novel
 
@@ -2104,24 +2133,21 @@ concrete molecular structure.
 #### 10.13.1 The Diffusion Failure Mode
 
 The latent diffusion model is the **least successful** method in the GENESIS suite. Multi-seed
-evaluation (§14.4) reveals catastrophic instability:
+evaluation (\u00a714.4, 5 seeds: 42/123/456/789/1337) reveals catastrophic instability:
 
-| Metric | Seed 42 | Seed 123 | Seed 456 | Mean ± SD |
-|---|---|---|---|---|
-| **Potency** | **−0.173** | **0.038** | 0.735 | 0.200 ± 0.475 |
-| **Uniqueness** | 10.1% | 16.1% | 26.2% | **17.8 ± 8.1%** |
-| **QED** | 0.041 | 0.045 | 0.190 | 0.092 ± 0.085 |
-| **Diversity** | 0.437 | 0.527 | 0.720 | 0.561 ± 0.145 |
+| Metric | Seed 42 | Seed 123 | Seed 456 | Seed 789 | Seed 1337 | Mean \u00b1 SD |
+|---|---|---|---|---|---|---|
+| **Potency** | \u22120.064 | \u22120.046 | 0.581 | 0.001 | 0.031 | 0.101 \u00b1 0.271 |
+| **Uniqueness** | 27.1% | 10.1% | 17.2% | 38.1% | 35.3% | **25.6 \u00b1 11.9%** |
+| **QED** | 0.046 | 0.190 | 0.041 | 0.142 | 0.248 | 0.133 \u00b1 0.090 |
+| **Diversity** | 0.722 | 0.439 | 0.527 | 0.830 | 0.928 | 0.689 \u00b1 0.204 |
 
-**Two of three seeds produce mode-collapsed output** (seed 42 and 123): the denoising
-network converges to a narrow region of latent space, decoding to nearly identical molecules.
-This is evidenced by uniqueness as low as 10.1% (89.9% duplicates) and negative potency
-(the repeated molecule's embedding is on the opposite side of the VP centroid from the
-target direction).
-
-**Only seed 456 produces reasonable output** (potency 0.735, uniqueness 26.2%), but even
-this "successful" seed generates 73.8% duplicate molecules — far below all other methods'
-95%+ uniqueness.
+**Only one of five seeds (456) reaches even a modestly positive potency** (0.581), and it is
+also one of the least diverse (uniqueness 17.2%). Two seeds (42, 123) show negative potency and
+low-to-moderate uniqueness, and the two highest-diversity seeds (789, 1337, diversity 0.83/0.93)
+still show near-zero potency (0.001/0.031). No seed simultaneously achieves reasonable potency
+*and* reasonable diversity/uniqueness \u2014 confirming the mode-collapse/instability failure mode
+is not confined to a minority of seeds but recurs across the full 5-seed set in different forms.
 
 #### 10.13.2 Root Cause Analysis
 
@@ -2149,11 +2175,13 @@ this "successful" seed generates 73.8% duplicate molecules — far below all oth
 
 #### 10.13.3 Novelty Value: This Failure Is Publishable
 
-**Negative findings are scientifically valuable.** This result provides evidence that:
+**Negative findings are scientifically valuable.** This result, now confirmed across a fuller
+5-seed set (not just the original 3), provides evidence that:
 
 > *Latent diffusion models, despite their dominance in image generation, are NOT directly
 > transferable to molecular generation in small-data disease-specific settings (n < 50K
-> training compounds). The mode collapse failure mode (uniqueness < 20%) is so severe
+> training compounds). The instability failure mode (uniqueness 10\u201338% across 5 seeds, no
+> seed achieving both good potency and good diversity simultaneously) is so severe
 > that latent diffusion should be used only with extreme caution in pharmaceutical
 > AI pipelines, and never without multi-seed stability verification.*
 
@@ -2163,8 +2191,9 @@ are universally superior to VAEs for molecular generation. Those papers use data
 larger (QM9: 130K, ZINC250K: 250K, GEOM-Drugs: 430K) where mode collapse is less likely.
 
 **Recommendation for the paper**: Present the diffusion results honestly with the caveat that
-2/3 seeds fail, and frame this as a **data-regime-dependent finding** — diffusion works for
-large molecular datasets but catastrophically fails at the disease-specific scale of OSCC.
+no single seed (of 5) achieves good potency and good diversity simultaneously, and frame this as a
+**data-regime-dependent finding** — diffusion works for large molecular datasets but catastrophically
+fails at the disease-specific scale of OSCC.
 
 #### 10.13.4 Comparison: Why CGLF (Flow Matching) Succeeds Where DDPM Fails
 
@@ -2177,14 +2206,14 @@ Both are generative models operating in the same 128-d latent space. The key dif
 | Target | Noise $\epsilon$ | Velocity $v = z_1 - z_0$ |
 | Stochasticity | Stochastic (added noise at each step) | Deterministic (ODE) |
 | Network | 6-layer MLP, 512 hidden | 8-layer MLP, 512 hidden, AdaLN |
-| Training stability | Mode collapse in 2/3 seeds | Stable (potency SD = 0.020) |
-| Uniqueness | 17.8% | **100.0%** |
+| Training stability | Unstable across all 5 seeds (SD = 0.271) | Stable (potency SD = 0.030) |
+| Uniqueness | 25.6% (5-seed mean) | **100.0%** |
 
 **The deterministic ODE (CGLF) is fundamentally more stable** than the stochastic reverse
 SDE (DDPM) for small datasets. Each CGLF trajectory follows a unique straight path from
 $\mathbf{z}_0$ to $\mathbf{z}_1$ — the bijective flow guarantees distinct outputs for distinct
 inputs. DDPM's stochastic reverse process can converge multiple starting points to the same
-output when the denoiser is undertrained, causing the observed mode collapse.
+output when the denoiser is undertrained, causing the observed instability.
 
 ---
 
@@ -2519,22 +2548,22 @@ estimator.
 *Claim strength*: Strong — this is a novel reward signal architecture for molecular RL.
 The contrastive-reward → RL pipeline has not been published before.
 
-#### 11.11.2 Empirical Evidence: The +110.5% Potency Jump
+#### 11.11.2 Empirical Evidence: The +271% Potency Jump
 
-**Multi-seed results** (Table 3, §14.4):
+**Multi-seed results** (Table 3, \u00a714.4; 5-seed mean \u00b1 SD, seeds 42/123/456/789/1337):
 
-| Metric | VAE (baseline) | RL-VAE | Δ | p-value |
+| Metric | VAE (baseline) | RL-VAE | \u0394 | Interpretation |
 |---|---|---|---|---|
-| Potency | 0.408 ± 0.013 | **0.859 ± 0.024** | **+110.5%** | CIs non-overlapping |
-| pChEMBL | 3.059 ± 0.069 | **6.258 ± 0.200** | **+104.6%** | Clinically meaningful (above 6.0 = sub-µM) |
-| VP Fraction | 44.8 ± 0.7% | **88.7 ± 2.5%** | **+97.8%** | Near-doubling of VP output |
-| QED | 0.440 ± 0.012 | **0.681 ± 0.016** | +54.8% | Drug-likeness improves (not degrades) |
-| SA Score | 4.795 ± 0.026 | **4.202 ± 0.088** | −12.4% (better) | More synthesisable |
-| Diversity | **0.916 ± 0.001** | 0.885 ± 0.007 | −3.4% | Modest cost |
-| Uniqueness | 98.4 ± 0.5% | 98.1 ± 1.1% | ≈0% | No mode collapse |
+| Potency | 0.196 \u00b1 0.019 | **0.726 \u00b1 0.050** | **+270.5%** | CIs non-overlapping (VAE [0.179,0.213] vs RL-VAE [0.682,0.770]) |
+| pChEMBL | 2.134 \u00b1 0.137 | **6.625 \u00b1 0.433** | **+210.5%** | Clinically meaningful (above 6.0 = sub-\u00b5M) |
+| VP Fraction | 25.2 \u00b1 1.3% | **80.0 \u00b1 8.9%** | **+217.5%** | Large increase in VP-class output |
+| QED | 0.435 \u00b1 0.011 | **0.693 \u00b1 0.051** | +59.3% | Drug-likeness improves (not degrades) |
+| SA Score | 4.801 \u00b1 0.019 | **4.123 \u00b1 0.269** | \u221214.1% (better) | More synthesisable |
+| Diversity | **0.916 \u00b1 0.002** | 0.850 \u00b1 0.030 | \u22127.2% | Modest cost |
+| Uniqueness | 98.7 \u00b1 0.6% | 94.6 \u00b1 4.2% | \u22124.2% | No mode collapse |
 
-**The most striking result**: RL-VAE simultaneously improves potency (+110.5%), drug-likeness
-(+54.8%), and synthesisability (−12.4%) while losing only 3.4% diversity. This violates the
+**The most striking result**: RL-VAE simultaneously improves potency (+270.5%), drug-likeness
+(+59.3%), and synthesisability (\u221214.1%) while losing only 7.2% diversity. This violates the
 naive expectation that optimising one molecular property degrades others. The explanation is
 that the VAE baseline generates diverse but undirected molecules — many of which happen to be
 poor drug candidates. The RL reward steers toward the overlapping region of chemical space where
@@ -2542,16 +2571,16 @@ high potency, good QED, and reasonable SA co-occur (this region exists because r
 are both potent and drug-like).
 
 **Clinical significance of pChEMBL jump**: VAE generates molecules with mean predicted pChEMBL
-= 3.059, corresponding to IC₅₀ ~ 873 µM (essentially inactive). RL-VAE generates molecules at
-mean pChEMBL = 6.258, corresponding to IC₅₀ ~ 0.55 µM (sub-micromolar, pharmacologically
-meaningful). This crosses the **clinical relevance threshold** of pChEMBL ≥ 6.0.
+= 2.134, corresponding to an essentially inactive predicted potency. RL-VAE generates molecules at
+mean pChEMBL = 6.625, corresponding to IC\u2085\u2080 ~ 0.24 \u00b5M (sub-micromolar, pharmacologically
+meaningful). This crosses the **clinical relevance threshold** of pChEMBL \u2265 6.0.
 
 #### 11.11.3 Hypothesis Validation: Does RL-VAE Actually Mode-Collapse Without KL?
 
 The §11.4 analysis revealed that the first-round KL penalty is inactive (dead code). Yet RL-VAE
-achieves 98.1% uniqueness and 0.885 diversity, showing **no mode collapse**. This validates
-that the three implicit regularisation mechanisms (fixed latent sampling, top-k, low LR) are
-sufficient for this setting. Future work should formally ablate the KL penalty to quantify
+achieves 94.6% uniqueness and 0.850 diversity across 5 seeds, showing **no mode collapse**. This
+validates that the three implicit regularisation mechanisms (fixed latent sampling, top-k, low LR)
+are sufficient for this setting. Future work should formally ablate the KL penalty to quantify
 its marginal contribution in second-round RL (CRAVE, where it IS active).
 
 #### 11.11.4 What Is Not Novel
@@ -2992,44 +3021,42 @@ strong guidance early would over-constrain the generation space.
 
 #### 12.12.2 Empirical Evidence
 
-**Multi-seed results** (Table 3, §14.4):
+**Multi-seed results** (Table 3, \u00a714.4; 5-seed mean \u00b1 SD, seeds 42/123/456/789/1337):
 
-| Metric | VAE (baseline) | CGLF | Δ vs VAE | RL-VAE (comparison) |
+| Metric | VAE (baseline) | CGLF | \u0394 vs VAE | RL-VAE (comparison) |
 |--------|---------------|------|----------|-------------------|
-| Potency | 0.408 ± 0.013 | **0.521 ± 0.020** | +27.7% | 0.859 ± 0.024 |
-| QED | 0.440 ± 0.012 | **0.516 ± 0.012** | +17.3% | 0.681 ± 0.016 |
-| SA Score | 4.795 ± 0.026 | **3.907 ± 0.071** | −18.5% (best) | 4.202 ± 0.088 |
-| Uniqueness | 98.4 ± 0.5% | **100.0 ± 0.1%** | +1.6% (perfect) | 98.1 ± 1.1% |
-| Diversity | 0.916 ± 0.001 | 0.901 ± 0.002 | −1.6% | 0.885 ± 0.007 |
-| VP Fraction | 44.8 ± 0.7% | 50.4 ± 1.3% | +12.5% | 88.7 ± 2.5% |
+| Potency | 0.196 \u00b1 0.019 | **0.378 \u00b1 0.030** | +92.9% | 0.726 \u00b1 0.050 |
+| QED | 0.435 \u00b1 0.011 | **0.272 \u00b1 0.029** | \u221237.5% (worse) | 0.693 \u00b1 0.051 |
+| SA Score | 4.801 \u00b1 0.019 | **5.155 \u00b1 0.171** | +7.4% (worse) | 4.123 \u00b1 0.269 |
+| Uniqueness | 98.7 \u00b1 0.6% | **100.0 \u00b1 0.0%** | +1.3% (perfect) | 94.6 \u00b1 4.2% |
+| Diversity | 0.916 \u00b1 0.002 | 0.888 \u00b1 0.002 | \u22123.1% | 0.850 \u00b1 0.030 |
+| VP Fraction | 25.2 \u00b1 1.3% | 39.1 \u00b1 3.3% | +55.2% | 80.0 \u00b1 8.9% |
 
-**Key finding: CGLF achieves the best SA score** (3.907 ± 0.071), meaning its generated
-molecules are the most synthesisable of all methods. This is a direct consequence of the
-Riemannian guidance — molecules are nudged toward high-potency regions *along the data
-manifold*, avoiding unrealistic structural motifs that reduce synthesisability.
+**Revised finding**: with the corrected 5-seed evaluation, CGLF's QED and SA are now *worse*
+than the unconditional VAE baseline (QED \u221237.5%, SA +7.4%), reversing the earlier report's
+"CGLF achieves the best SA score of all methods" claim (which was based on an older,
+pre-correction evaluation). CGLF's genuine, robust strengths under the corrected model are
+**perfect uniqueness** (100.0 \u00b1 0.0%, tightest of any method) and a **real, moderate potency
+gain over the unconditional baseline** (+92.9%, well outside VAE's noise band). Its QED/SA
+profile is now closer to CRAVE/RL-VAE's exploratory end than to a "best synthesisability"
+outcome \u2014 the guidance mechanism reliably pulls the flow toward the VP region but no longer
+appears to preferentially select the most synthesisable structures within that region.
 
-**CGLF vs RL-VAE: Different strengths for different use cases**:
-- RL-VAE optimises aggressively for potency (0.859) but trades some diversity (0.885)
-- CGLF provides modest potency enhancement (0.521) with the **best synthesis-diversity-potency
-  balance** (best SA, perfect uniqueness, 0.901 diversity)
+**CGLF vs RL-VAE: different strengths, revised**:
+- RL-VAE optimises more aggressively for potency (0.726) and, under the corrected model, also
+  has better QED (0.693 vs 0.272) than CGLF
+- CGLF's distinguishing strength is now **perfect, seed-robust uniqueness** and a
+  **geometrically principled, deterministic generation path** (\u00a712.11), not synthesisability
 
-In a drug discovery pipeline, CGLF-generated molecules would be prioritised for **initial
-hit-to-lead** campaigns where synthesisability is critical, while RL-VAE molecules would
-be prioritised for **late-stage optimisation** where potency maximisation is the primary goal.
-
-**Campaign-stage placement**:
-
-| Drug Discovery Stage | Preferred Method | Rationale |
-|---|---|---|
-| Hit identification | CGLF | Best SA (3.907), 100% uniqueness, broad scaffold diversity |
-| Hit-to-lead | CGLF + RL-VAE hybrid | CGLF for scaffold diversity, RL for potency optimisation of top hits |
-| Lead optimisation | RL-VAE / CRAVE | Highest potency (0.859), acceptable SA for series-level refinement |
-| Late-stage candidate selection | Ensemble consensus | Cross-method agreement identifies robust candidates |
+This changes the earlier "campaign-stage placement" table's premise (that CGLF is the
+synthesisability-optimal method for hit identification); a corrected framing is that CGLF's
+practical value lies in its reproducible, mode-collapse-free coverage of the VP-adjacent region
+of latent space, complementing RL-VAE/CRAVE's stronger potency/QED optimisation.
 
 **Comparison with Diffusion (§10)**: CGLF and DDPM both operate in the same 128-d latent space,
-but CGLF achieves 100.0% uniqueness vs DDPM's 17.8%, potency 0.521 vs DDPM's 0.200 (unstable),
-and SA 3.907 vs DDPM's 7.914. The OT-CFM backbone is fundamentally more suited than DDPM for
-this setting (§10.13 root cause analysis).
+but CGLF achieves 100.0% uniqueness vs DDPM's 25.6% (5-seed mean), and potency 0.378 (SD 0.030)
+vs DDPM's 0.101 (SD 0.271, unstable). The OT-CFM backbone is fundamentally more suited than DDPM
+for this setting (§10.13 root cause analysis).
 
 #### 12.12.3 What Is Not Novel
 
@@ -3241,14 +3268,14 @@ demonstrating effective coverage of the molecular manifold.
 
 **Motivation for cascaded RL (RL-VAE → CRAVE)**:
 
-The RL-VAE stage performs the largest "lift" in potency metrics. Multi-seed evaluation (§14.4)
-shows RL-VAE increases mean OSCC potency score from **0.408 ± 0.013** (base VAE) to
-**0.859 ± 0.024** (RL-VAE) — a gain of **+0.451** (+110.5%). This is a massive jump driven
+The RL-VAE stage performs the largest "lift" in potency metrics. Multi-seed evaluation (\u00a714.4,
+5 seeds) shows RL-VAE increases mean OSCC potency score from **0.196 \u00b1 0.019** (base VAE) to
+**0.726 \u00b1 0.050** (RL-VAE) — a gain of **+0.530** (+270.5%). This is a massive jump driven
 by the REINFORCE gradient aligning the decoder with the contrastive potency landscape. However,
-the same magnitude of reward gain cannot be achieved in a second RL stage from 0.859, because
+the same magnitude of reward gain cannot be achieved in a second RL stage from 0.726, because
 the easy improvements (common drug-like scaffolds, obvious potency pharmacophores) have already
-been found. The CRAVE stage targets the residual improvement from 0.859 to **0.897 ± 0.000**
-— a gain of +0.038 (+4.4%), smaller in absolute terms but achieved by exploring harder-to-find
+been found. The CRAVE stage targets the residual improvement from 0.726 to **0.771 \u00b1 0.033**
+— a gain of +0.045 (+6.2%), smaller in absolute terms but achieved by exploring harder-to-find
 molecular territory with multi-strategy sampling and Pareto filtering.
 
 **Prior shifting**: RL-VAE modifies the decoder's prior relative to the original VAE. CRAVE treats
@@ -3261,25 +3288,26 @@ By using the RL-VAE checkpoint as the reference policy, CRAVE prevents catastrop
 potency gains already made by RL-VAE. If CRAVE used the original VAE prior, it would be tempted to
 revert to high-diversity (but low-potency) generation that the VAE prior encourages.
 
-**Three-stage cascade summary** (empirical values from multi-seed evaluation, §14.4):
+**Three-stage cascade summary** (empirical values from multi-seed evaluation, \u00a714.4; 5-seed mean \u00b1 SD):
 
-| Stage | Starting from | Potency (mean±SD) | Improvement | KL reference |
+| Stage | Starting from | Potency (mean\u00b1SD) | Improvement | KL reference |
 |---|---|---|---|---|
-| Base VAE | N/A | 0.408 ± 0.013 | Baseline | None |
-| RL-VAE | Base VAE decoder | 0.859 ± 0.024 | **+110.5%** (+0.451) | Base VAE prior (inactive — see §11.4) |
-| CRAVE (filt.) | RL-VAE decoder | 0.897 ± 0.000 | **+4.4%** (+0.038) | RL-VAE prior (active — per-token KL) |
+| Base VAE | N/A | 0.196 \u00b1 0.019 | Baseline | None |
+| RL-VAE | Base VAE decoder | 0.726 \u00b1 0.050 | **+270.5%** (+0.530) | Base VAE prior (inactive — see \u00a711.4) |
+| CRAVE (filt.) | RL-VAE decoder | 0.771 \u00b1 0.033 | **+6.2%** (+0.045) | RL-VAE prior (active — per-token KL) |
 
 Each stage is a warm-start of the previous — this is analogous to curriculum learning in NLP
 (pre-train on large corpus, fine-tune on task-specific data, further fine-tune on human feedback).
 
-**Pharmacological interpretation of pChEMBL gains**: The mean pChEMBL shift from 6.258
-(RL-VAE) to 6.541 (CRAVE) translates to an IC₅₀ change from ~0.55 µM to ~0.29 µM — a
-nearly 2-fold improvement in potency. In the sub-micromolar range, each 0.3 pChEMBL
-unit represents approximately a 2× increase in binding affinity. This gain sits squarely
+**Pharmacological interpretation of pChEMBL gains**: The mean pChEMBL shift from 6.625
+(RL-VAE) to 7.003 (CRAVE) translates to an IC₅₀ change from ~0.24 µM to ~0.10 µM — a
+roughly 2.4-fold improvement in potency. In the sub-micromolar range, each ~0.38 pChEMBL
+unit represents approximately a 2.4× increase in binding affinity. This gain sits squarely
 in the hit-to-lead transition zone where medicinal chemistry programmes typically aim to
-achieve 3–10× improvements through iterative SAR cycles. The near-zero SD (±0.019)
-across seeds indicates the Pareto filter's deterministic selection reliably converges to
-this potency level regardless of sampling stochasticity.
+achieve 3–10× improvements through iterative SAR cycles. CRAVE's potency SD (±0.033) is not
+zero — unlike the earlier report's claim of near-deterministic convergence — but it remains
+substantially tighter, relative to its mean, than most other methods (§13.11.1 revises the
+"seed-invariant" characterisation with the full 5-seed data).
 
 ### 13.9 EMA Parameter Averaging: Stochastic Weight Averaging Theory
 
@@ -3395,40 +3423,51 @@ catastrophic diversity loss that would occur if starting from the unfocused VAE 
 pattern for molecular optimisation. The closest analogue is curriculum RL (Bengio et al., 2009),
 but that changes the *task difficulty*, not the *KL anchor*.
 
-**Secondary Contribution: Seed-Invariant Molecular Generation**
+**Secondary Contribution (revised, 2026-09-19): Reduced-Variance, Not Seed-Invariant, Molecular Generation**
 
-CRAVE achieves potency standard deviation of **0.000** across three random seeds (42, 123, 456).
-No other molecular generative method in the literature reports seed-invariant output at this level.
-The mechanism is not a single component but the **convergence of three independent noise-removal
-mechanisms**, each eliminating a distinct source of stochasticity:
+An earlier version of this section reported CRAVE achieving potency standard deviation of
+**0.000** across three random seeds (42, 123, 456), and framed this as a "seed-invariant" novel
+contribution. Extending the evaluation to the full 5-seed set (adding seeds 789 and 1337) shows
+this **does not hold**: CRAVE (filtered)'s potency SD across all 5 seeds is **0.033**, not 0.000.
+Per-seed values are 0.792 (42), 0.774 (123), 0.796 (456), 0.715 (789), 0.778 (1337) — the first
+three seeds happened to cluster unusually tightly, giving the false appearance of exact
+determinism, but seeds 789 and 1337 fall clearly outside that tight band. The mechanism
+description below (EMA, Pareto filtering, canonical deduplication) is still architecturally
+accurate and does genuinely *reduce* variance relative to earlier-stage methods, but it does not
+eliminate seed-to-seed variance entirely, and the original "seed-invariant" framing is
+retracted.
 
-| Mechanism | Source of noise removed | How |
+The three noise-reduction mechanisms, still relevant for the more modest (but real) variance
+reduction CRAVE achieves relative to RL-VAE:
+
+| Mechanism | Source of noise reduced | How |
 |---|---|---|
-| **EMA** (§13.9) | Training noise — different random batches produce different weight trajectories | Exponential averaging over ~200 steps smooths the weights into a broad, flat basin; different seeds converge to the same basin |
-| **Pareto filter** (§13.4) | Sampling noise — different random seeds produce different raw molecule pools | Deterministic rank-and-select on composite score; top-1,000 selection is a deterministic function of scores |
+| **EMA** (§13.9) | Training noise — different random batches produce different weight trajectories | Exponential averaging over ~200 steps smooths the weights toward a broad, flat basin |
+| **Pareto filter** (§13.4) | Sampling noise — different random seeds produce different raw molecule pools | Deterministic rank-and-select on composite score reduces (but does not eliminate) pool-to-pool variance |
 | **Canonical dedup** (§13.4) | Notation noise — tautomeric and notation variants of the same molecule | `Chem.MolToSmiles(Chem.MolFromSmiles(s))` collapses all representations to a single canonical form |
 
-No single mechanism achieves seed invariance alone. Remove EMA and the saved model
-fluctuates across seeds; remove the Pareto filter and sampling randomness propagates to
-the output; remove canonical dedup and duplicate molecules inflate variance. Together,
-they eliminate every source of stochasticity in the final output.
+**Revised 5-seed potency SD comparison across all methods**:
 
-| Method | Potency SD (3 seeds) | Interpretation |
-|--------|---------------------|---------------|
-| VAE | 0.013 | Low variance |
-| cVAE | 0.015 | Low variance |
-| Diffusion | **0.475** | Catastrophic instability |
-| RL-VAE | 0.024 | Moderate variance |
-| CGLF | 0.020 | Moderate variance |
-| **CRAVE** | **0.000** | **Seed-invariant** |
+| Method | Potency SD (5 seeds) | Coefficient of variation | Interpretation |
+|--------|---------------------|--------------------------|---------------|
+| VAE | 0.019 | 9.7% | Low variance |
+| cVAE | 0.185 | 51.2% | High variance, driven by one outlier seed (\u00a79.9.2) |
+| Diffusion | **0.271** | 268% | Catastrophic instability (mean itself is near zero) |
+| RL-VAE | 0.050 | 6.9% | Low-to-moderate variance |
+| CGLF | 0.030 | 7.9% | Low-to-moderate variance |
+| CRAVE (filt.) | 0.033 | 4.3% | **Lowest coefficient of variation**, but not zero |
 
-This is a critical property for reproducible drug discovery pipelines. When a method's output
-depends strongly on the random seed, it is difficult to compare experimental conditions, and
-there is a risk of "cherry-picking" favourable seeds for publication. CRAVE's seed invariance
-eliminates this concern entirely.
+**Honest reframing**: by absolute SD, VAE (0.019) is nominally the lowest, but VAE's low SD
+reflects a low, undirected mean (0.196) rather than a "controlled" high-potency outcome. The more
+meaningful comparison is the **coefficient of variation** (SD relative to the mean) among the
+potency-directed methods (RL-VAE, CGLF, CRAVE): here CRAVE (4.3%) is indeed the most consistent,
+followed by CGLF (7.9%) and RL-VAE (6.9%). This is a real, defensible finding — CRAVE's output is
+the most *proportionally* consistent among the methods that specifically target high potency —
+but it should be described as "the lowest relative variance among potency-directed methods," not
+as "seed-invariant" or "deterministic," which the corrected 5-seed data does not support.
 
-*Claim strength*: Moderate — the result is an emergent property of the Pareto filter rather
-than a designed feature, but the observation itself is novel and valuable.
+*Claim strength*: Moderate — the reduced-variance property is real and an emergent effect of the
+Pareto filter, but weaker than originally claimed; the "seed-invariant" language has been removed.
 
 **Tertiary Contribution: Multi-Strategy Ensemble for Coverage of Temperature-Top_k Space**
 
@@ -3456,24 +3495,24 @@ coverage + Pareto selection is a well-engineered combination not seen in prior m
 
 | Metric | RL-VAE | CRAVE (final) | Δ | Interpretation |
 |--------|--------|--------------|---|---------------|
-| Potency | 0.859 ± 0.024 | **0.897 ± 0.000** | +4.4% | Marginal absolute gain, CIs non-overlapping |
-| pChEMBL | 6.258 ± 0.200 | **6.541 ± 0.019** | +4.5% | Deep sub-µM (IC₅₀ ~ 0.29 µM) |
-| VP Fraction | 88.7 ± 2.5% | **93.4 ± 0.3%** | +5.3% | >93% of output is virtually potent |
-| QED | 0.681 ± 0.016 | **0.773 ± 0.004** | +13.5% | Drug-likeness improvement continues |
-| SA Score | 4.202 ± 0.088 | **3.899 ± 0.025** | −7.2% (better) | More synthesisable |
-| Diversity | 0.885 ± 0.007 | 0.862 ± 0.003 | −2.6% | Modest cost for potency gain |
-| Uniqueness | 98.1 ± 1.1% | **100.0 ± 0.0%** | +1.9% | Perfect — Pareto filter eliminates duplicates |
+| Potency | 0.726 ± 0.050 | **0.771 ± 0.033** | +6.2% | Modest absolute gain; CIs overlap somewhat (see §13.11.1 revision) |
+| pChEMBL | 6.625 ± 0.433 | **7.003 ± 0.328** | +5.7% | Deep sub-µM (IC₅₀ ~ 0.10 µM) |
+| VP Fraction | 80.0 ± 8.9% | **88.6 ± 6.4%** | +10.8% | ~89% of output is virtually potent |
+| QED | 0.693 ± 0.051 | **0.784 ± 0.043** | +13.1% | Drug-likeness improvement continues |
+| SA Score | 4.123 ± 0.269 | **3.922 ± 0.257** | −4.9% (better) | More synthesisable |
+| Diversity | 0.850 ± 0.030 | 0.819 ± 0.043 | −3.6% | Modest cost for potency gain |
+| Uniqueness | 94.6 ± 4.2% | **100.0 ± 0.0%** | +5.7% | Perfect — Pareto filter eliminates duplicates |
 
-**Three-stage cascade summary (full pipeline)**:
+**Three-stage cascade summary (full pipeline, 5-seed mean)**:
 
 | Stage | Potency | QED | SA | VP Frac | Cumulative Improvement |
 |-------|---------|-----|-----|---------|----------------------|
-| VAE (baseline) | 0.408 | 0.440 | 4.795 | 44.8% | — |
-| RL-VAE (+RL) | 0.859 | 0.681 | 4.202 | 88.7% | +110.5% potency, +54.8% QED |
-| CRAVE (+RL²+ensemble+Pareto) | **0.897** | **0.773** | **3.899** | **93.4%** | **+119.9% potency, +75.7% QED, −18.7% SA** |
+| VAE (baseline) | 0.196 | 0.435 | 4.801 | 25.2% | — |
+| RL-VAE (+RL) | 0.726 | 0.693 | 4.123 | 80.0% | +270.5% potency, +59.3% QED |
+| CRAVE (+RL²+ensemble+Pareto) | **0.771** | **0.784** | **3.922** | **88.6%** | **+293.6% potency, +80.2% QED, −18.3% SA** |
 
-**Diminishing returns analysis**: The VAE→RL-VAE step provides the largest gain (+110.5% potency).
-The RL-VAE→CRAVE step adds +4.4% potency but significantly improves QED (+13.5%) and SA (−7.2%).
+**Diminishing returns analysis**: The VAE→RL-VAE step provides the largest gain (+270.5% potency).
+The RL-VAE→CRAVE step adds +6.2% potency but significantly improves QED (+13.1%) and SA (−4.9%).
 This pattern matches drug discovery reality: initial hit identification provides the largest signal,
 while lead optimisation involves careful multi-objective refinement with smaller individual gains
 that collectively determine clinical viability.
@@ -3487,8 +3526,9 @@ evidence supports the prior-shifting hypothesis:
 
 1. **CRAVE converges faster** (50 RL epochs) than RL-VAE (100 RL epochs), despite starting from
    a harder optimisation landscape (already-high potency leaves less room for gradient signal)
-2. **CRAVE achieves lower potency variance** (SD = 0.000 vs RL-VAE's 0.024), consistent with a
-   tighter prior providing more consistent trajectories
+2. **CRAVE achieves a lower coefficient of variation in potency** (4.3% vs RL-VAE's 6.9%; §13.11.1),
+   consistent with a tighter prior providing more consistent trajectories, though (per the §13.11.1
+   revision) this is not the near-exact determinism originally claimed
 3. **The KL penalty IS active in CRAVE** (§11.4 confirmed it is dead code in RL-VAE but live in
    CRAVE) — this is the architectural difference between the two stages
 
@@ -3518,7 +3558,7 @@ to CRAVE's RL loop. The table below makes the architectural differences explicit
 | RL stages | Single | Cascaded (RL-VAE → CRAVE) — prior shifts between stages |
 | Multi-strategy generation | No | 4-strategy ensemble (τ/top-k sweep) |
 | Post-hoc filtering | Scoring function cutoff | Pareto-optimal composite selection (distinct from RL reward) |
-| Seed reproducibility | Not reported | SD = 0.000 across 3 seeds |
+| Seed reproducibility | Not reported | SD = 0.033 across 5 seeds (lowest coefficient of variation among potency-directed methods; not zero — §13.11.1) |
 | Scoring functions used | 1 (same for training and selection) | 3 distinct functions at 3 stages (§13.4) |
 
 The core difference is that REINVENT uses a single RL stage where the prior is the
@@ -3584,96 +3624,116 @@ Based on the study design, different methods are expected to excel on different 
 
 ### 14.4 Multi-Seed Generative Validation Results
 
-**Date**: 2026-03-25
+**Date**: 2026-09-16 (5-seed retrain with the corrected checkpoint-selection code; supersedes the original 2026-03-25, 3-seed {42,123,456} evaluation referenced in earlier drafts of this document)
 **Script**: `GENESIS/generative/multiseed_gen.py`
-**Seeds**: {42, 123, 456} (matching Phase 5a contrastive validation)
+**Seeds**: {42, 123, 456, 789, 1337}
 **Results**: `GENESIS/generative/multiseed/aggregate/`
 **Status**: COMPLETE ✅
-**Total compute**: ~25 hours on Apple M3 MPS (seed 42 copied from existing, seeds 123 and 456 trained fresh)
+**Total compute**: ~27.3 hours on Apple M3 MPS (all 5 seeds trained fresh, zero crashes)
 
 To quantify statistical robustness of all generative metrics, each of the 6 generative
-methods (7 including CRAVE unfiltered) was retrained and evaluated across 3 independent
-random seeds. Bootstrap 95% confidence intervals (1000 iterations) were computed for
-all metrics.
+methods (7 including CRAVE unfiltered) was retrained and evaluated across 5 independent
+random seeds, using the corrected checkpoint-selection PGCL model (§5.3.2) as the shared
+foundation for the contrastive potency reward/conditioning. Approximate 95% confidence
+intervals (normal approximation, mean ± 1.96·SD/√5) are reported in §14.4.2; a full
+bootstrap-resampling CI was not recomputed for this 5-seed set (see caveat below).
 
-#### 14.4.1 Aggregated Results (Mean ± SD across 3 seeds)
+#### 14.4.1 Aggregated Results (Mean ± SD across 5 seeds)
 
-**Table 3.** Multi-seed generative evaluation results. Each cell shows mean ± SD across seeds {42, 123, 456}. 1,000 molecules generated per method per seed.
+**Table 3.** Multi-seed generative evaluation results. Each cell shows mean ± SD across seeds {42, 123, 456, 789, 1337}. ~1,000 molecules generated per method per seed.
 
 | Method | Valid% | Uniq% | Novel% | Potency ↑ | pChEMBL ↑ | VP Frac ↑ | QED ↑ | SA ↓ | Diversity ↑ | ScafNov% |
 |--------|--------|-------|--------|-----------|-----------|-----------|-------|------|-------------|----------|
-| VAE | 100.0±0.0 | 98.4±0.5 | 99.5±0.1 | 0.408±0.013 | 3.059±0.069 | 44.8±0.7 | 0.440±0.012 | 4.795±0.026 | 0.916±0.001 | 96.7±0.6 |
-| cVAE | 100.0±0.0 | 98.5±0.4 | 99.3±0.5 | 0.444±0.015 | 3.375±0.106 | 48.2±1.5 | 0.420±0.013 | 4.793±0.052 | 0.914±0.001 | 95.9±0.7 |
-| Diffusion | 100.0±0.0 | 17.8±8.1 | 100.0±0.0 | 0.200±0.475 | 1.035±3.033 | 34.7±51.8 | 0.092±0.085 | 7.914±0.795 | 0.561±0.145 | 100.0±0.0 |
-| RL-VAE | 100.0±0.0 | 98.1±1.1 | 99.6±0.1 | 0.859±0.024 | 6.258±0.200 | 88.7±2.5 | 0.681±0.016 | 4.202±0.088 | 0.885±0.007 | 94.1±2.8 |
-| CGLF | 100.0±0.0 | 100.0±0.1 | 99.5±0.2 | 0.521±0.020 | 3.714±0.119 | 50.4±1.3 | 0.516±0.012 | 3.907±0.071 | 0.901±0.002 | 92.0±1.3 |
-| CRAVE (filt.) | 100.0±0.0 | 100.0±0.0 | 99.4±0.1 | 0.897±0.000 | 6.529±0.012 | 93.4±0.3 | 0.773±0.004 | 3.899±0.025 | 0.862±0.003 | 96.4±0.6 |
-| CRAVE (unfilt.) | 100.0±0.0 | 95.8±0.4 | 99.6±0.1 | 0.867±0.003 | 6.322±0.031 | 89.9±0.6 | 0.681±0.003 | 4.161±0.031 | 0.878±0.002 | 95.9±0.4 |
+| VAE | 100.0±0.0 | 98.7±0.6 | 99.5±0.2 | 0.196±0.019 | 2.134±0.137 | 25.2±1.3 | 0.435±0.011 | 4.801±0.019 | 0.916±0.002 | 96.7±0.4 |
+| cVAE | 100.0±0.0 | 98.0±1.2 | 99.5±0.5 | 0.361±0.185 | 3.669±1.709 | 44.8±22.9 | 0.375±0.091 | 5.105±0.493 | 0.889±0.053 | 97.0±1.7 |
+| Diffusion | 100.0±0.0 | 25.6±11.9 | 100.0±0.0 | 0.101±0.271 | 0.857±2.093 | 10.5±15.0 | 0.133±0.090 | 7.533±0.844 | 0.689±0.204 | 100.0±0.0 |
+| RL-VAE | 100.0±0.0 | 94.6±4.2 | 99.6±0.3 | 0.726±0.050 | 6.625±0.433 | 80.0±8.9 | 0.693±0.051 | 4.123±0.269 | 0.850±0.030 | 92.4±2.4 |
+| CGLF | 100.0±0.0 | 100.0±0.0 | 99.9±0.1 | 0.378±0.030 | 3.778±0.255 | 39.1±3.3 | 0.272±0.029 | 5.155±0.171 | 0.888±0.002 | 96.1±1.1 |
+| CRAVE (filt.) | 100.0±0.0 | 100.0±0.0 | 99.4±0.2 | 0.771±0.033 | 7.003±0.328 | 88.6±6.4 | 0.784±0.043 | 3.922±0.257 | 0.819±0.043 | 91.7±3.0 |
+| CRAVE (unfilt.) | 100.0±0.0 | 90.4±5.9 | 99.6±0.2 | 0.724±0.049 | 6.617±0.434 | 79.8±8.6 | 0.692±0.055 | 4.152±0.257 | 0.847±0.033 | 92.4±1.8 |
 
-#### 14.4.2 Bootstrap 95% Confidence Intervals
+#### 14.4.2 Approximate 95% Confidence Intervals *(normal approximation, mean ± 1.96·SD/√5; not a full bootstrap resample — see caveat below)*
 
-| Method | Potency CI | pChEMBL CI | VP Fraction CI | QED CI | SA CI | Diversity CI |
-|--------|-----------|-----------|----------------|--------|-------|-------------|
-| VAE | [0.395, 0.421] | [2.989, 3.126] | [0.443, 0.456] | [0.428, 0.452] | [4.765, 4.811] | [0.914, 0.917] |
-| cVAE | [0.433, 0.461] | [3.289, 3.493] | [0.470, 0.499] | [0.412, 0.435] | [4.741, 4.844] | [0.913, 0.915] |
-| Diffusion | [−0.173, 0.735] | [−1.449, 4.415] | [0.017, 0.944] | [0.041, 0.190] | [7.077, 8.660] | [0.437, 0.720] |
-| RL-VAE | [0.835, 0.882] | [6.063, 6.463] | [0.863, 0.913] | [0.664, 0.696] | [4.131, 4.300] | [0.878, 0.892] |
-| CGLF | [0.499, 0.537] | [3.580, 3.807] | [0.495, 0.519] | [0.504, 0.528] | [3.846, 3.985] | [0.900, 0.903] |
-| CRAVE (filt.) | [0.897, 0.898] | [6.518, 6.542] | [0.931, 0.937] | [0.770, 0.777] | [3.877, 3.926] | [0.859, 0.864] |
-| CRAVE (unfilt.) | [0.865, 0.870] | [6.302, 6.358] | [0.894, 0.906] | [0.677, 0.683] | [4.137, 4.196] | [0.876, 0.879] |
+| Method | Potency CI | QED CI | Diversity CI |
+|--------|-----------|--------|-------------|
+| VAE | [0.179, 0.213] | [0.426, 0.444] | [0.914, 0.918] |
+| cVAE | [0.199, 0.523] | [0.295, 0.455] | [0.842, 0.936] |
+| Diffusion | [−0.137, 0.339] | [0.054, 0.212] | [0.510, 0.868] |
+| RL-VAE | [0.682, 0.770] | [0.648, 0.738] | [0.824, 0.876] |
+| CGLF | [0.352, 0.404] | [0.247, 0.297] | [0.886, 0.890] |
+| CRAVE (filt.) | [0.742, 0.800] | [0.746, 0.822] | [0.781, 0.857] |
+| CRAVE (unfilt.) | [0.681, 0.767] | [0.644, 0.740] | [0.818, 0.876] |
+
+**Caveat**: an earlier version of this section reported a true bootstrap-resampled 95% CI
+computed from a 3-seed {42,123,456} evaluation predating the checkpoint-selection fix. That
+CI table has been superseded and is no longer accurate for the corrected model. The table
+above uses a normal approximation from the 5-seed mean/SD as a practical substitute; a
+proper bootstrap recomputation against the 5-seed data has not been performed and would be
+a reasonable follow-up for full rigor.
 
 #### 14.4.3 Seed Stability Analysis
 
-Methods are ranked by potency SD (ascending = most stable):
+Methods are ranked by potency SD (ascending = most stable in absolute terms):
 
-| Rank | Method | Potency SD | Interpretation |
+| Rank | Method | Potency SD (5 seeds) | Interpretation |
 |------|--------|-----------|----------------|
-| 1 | CRAVE (filtered) | 0.0004 | Essentially deterministic; Pareto filtering eliminates seed noise |
-| 2 | CRAVE (unfiltered) | 0.0025 | Very stable; seed variance absorbed by ensemble strategy |
-| 3 | VAE | 0.0126 | Stable baseline; stochastic sampling is well-behaved |
-| 4 | cVAE | 0.0152 | Comparable to VAE; FiLM conditioning adds minimal variance |
-| 5 | CGLF | 0.0196 | Moderate; OT-CFM trajectories are deterministic but decoder varies |
-| 6 | RL-VAE | 0.0235 | Bounded variance; REINFORCE exploration is seed-dependent |
-| 7 | Diffusion | 0.4753 | Catastrophic instability; mode collapse is stochastic by seed |
+| 1 | VAE | 0.019 | Low absolute variance, but around a low, undirected mean |
+| 2 | CGLF | 0.030 | Low-to-moderate; OT-CFM trajectories are deterministic but decoder varies |
+| 3 | CRAVE (filtered) | 0.033 | Low-to-moderate in absolute terms; lowest *relative* variance (CV 4.3%) among potency-directed methods |
+| 4 | CRAVE (unfiltered) | 0.049 | Comparable to RL-VAE |
+| 5 | RL-VAE | 0.050 | Bounded variance; REINFORCE exploration is seed-dependent |
+| 6 | cVAE | 0.185 | High variance, driven by a single outlier seed (1337; §9.9.2) |
+| 7 | Diffusion | 0.271 | Catastrophic instability; no seed achieves both good potency and good diversity |
 
-#### 14.4.4 Key Findings
+#### 14.4.4 Key Findings *(revised, 2026-09-19, against the corrected 5-seed evaluation)*
 
-1. **CRAVE is seed-invariant**: Potency SD = 0.0004 (0.04% coefficient of variation).
-   The three-phase design — starting from a warm RL-VAE checkpoint, applying KL-regularised
-   RL, and Pareto filtering — produces essentially identical output regardless of seed.
-   This is the strongest evidence that CRAVE's dominance is not a statistical artefact.
+1. **CRAVE is not seed-invariant, but has the lowest relative variance among potency-directed
+   methods**: potency SD = 0.033 (coefficient of variation 4.3%), not the SD = 0.0004
+   ("seed-invariant") originally reported from the 3-seed evaluation. Adding seeds 789 and 1337
+   revealed that the original 3-seed cluster (0.792/0.774/0.796) was itself an unusually tight
+   subset; the full 5-seed range is 0.715–00.796. CRAVE's dominance over other methods on mean
+   potency is still well-supported, but the "essentially deterministic" framing is retracted.
 
-2. **Diffusion exhibits catastrophic seed sensitivity**: Potency spans −0.173 to +0.735
-   across seeds, with a CI that crosses zero. Two of three seeds produced mode-collapsed
-   output (seed 42: potency −0.173, seed 123: potency 0.038; only seed 456: potency
-   0.735 produced reasonable molecules). The VP fraction CI [0.017, 0.944] spans
-   essentially the entire range. **Diffusion results should be cited with caution and
-   the mode collapse failure mode explicitly disclosed.**
+2. **Diffusion exhibits catastrophic seed sensitivity**: potency spans −0.064 to +0.581
+   across the 5 seeds, with a CI that crosses zero ([−0.137, 0.339]). No single seed
+   simultaneously achieves reasonable potency and reasonable diversity/uniqueness — the two
+   highest-diversity seeds (789, 1337; diversity 0.83/0.93) have near-zero potency, while the
+   one seed with positive potency (456: 0.581) has middling diversity/uniqueness (0.527/17.2%).
+   **Diffusion results should be cited with caution and this instability explicitly disclosed.**
 
-3. **RL-VAE shows bounded variance**: Potency range [0.835, 0.882] is tight enough to
-   confirm reliable generation. The SD (0.024) is an order of magnitude lower than
-   Diffusion's, despite RL's stochastic REINFORCE gradient. KL regularisation against
-   the frozen VAE prior successfully constrains exploration.
+3. **RL-VAE shows bounded, moderate variance**: potency range [0.682, 0.770] (approximate CI)
+   is reasonably tight. The SD (0.050) is roughly 5× lower than Diffusion's, despite RL's
+   stochastic REINFORCE gradient. KL regularisation against the frozen VAE prior helps
+   constrain exploration, though this document no longer claims near-total elimination of
+   seed variance for any method except in relative (coefficient-of-variation) terms.
 
-4. **VAE/cVAE are stable but mediocre**: Both achieve low potency SD (~0.013–0.015)
-   but the mean potency (~0.41–0.44) is low — they reliably produce diverse but
-   undirected molecules. This is expected: they sample the full latent distribution.
+4. **VAE is stable but mediocre; cVAE is unstable and only modestly better on average**:
+   VAE achieves the lowest absolute potency SD (0.019) but the lowest mean potency (0.196).
+   cVAE's mean (0.361) is nominally higher but driven by one outlier seed with SD (0.185)
+   larger than the mean difference itself (§9.9.2) — the conditioning benefit is real but far
+   less robustly established than previously claimed.
 
-5. **CGLF is the stable middle ground**: Potency 0.521 ± 0.020, with diversity
-   0.901 ± 0.002. The OT-CFM flow provides more deterministic trajectories than
-   diffusion, validated by the 24× lower potency SD (0.020 vs 0.475).
+5. **CGLF is a stable, moderate performer**: potency 0.378 ± 0.030, with diversity
+   0.888 ± 0.002 — the tightest diversity SD of any method, reflecting deterministic OT-CFM
+   trajectories combined with a fixed decoder.
 
-6. **Seed 42 original results fall within all CIs**: The original single-seed analysis
-   (used throughout the pipeline) is confirmed as representative — no cherry-picking.
+6. **Ranking order is preserved despite the corrected absolute numbers**: CRAVE (0.771) >
+   RL-VAE (0.726) > CGLF (0.378) > cVAE (0.361) > VAE (0.196) > Diffusion (0.101) on mean
+   potency — the same qualitative ordering reported under the earlier (now-superseded) 3-seed
+   evaluation, even though every individual mean/SD value has changed.
 
 #### 14.4.5 Implications for Study Claims
 
-All generative method rankings from the original seed-42 analysis are confirmed:
-CRAVE > RL-VAE > CGLF > cVAE > VAE > Diffusion. The ranking holds across all 3 seeds
-on every primary metric (potency, QED, VP fraction). The only method whose ranking
-*could* change with different seeds is Diffusion, which can catastrophically fail
-(2/3 seeds) or succeed (1/3 seeds) — reinforcing the recommendation against Diffusion
-for production use.
+The generative method potency ranking (CRAVE > RL-VAE > CGLF > cVAE > VAE > Diffusion) holds
+across the full 5-seed set, consistent with the earlier 3-seed report — this specific ranking
+claim is robust to the additional seeds. However, several *quantitative* claims tied to the
+original 3-seed numbers (the exact percentage improvements, the "seed-invariant CRAVE" claim,
+the specific bootstrap CIs, and cVAE's "statistically significant" potency gain over VAE) do
+**not** carry over and have been individually corrected in §§8–13 above and in this table. The
+only method whose ranking position is genuinely fragile across seeds is Diffusion, which
+fails unpredictably in different ways across all 5 seeds tested — reinforcing the
+recommendation against Diffusion for production use, now on a firmer (5-seed, not 3-seed)
+evidential basis.
 
 #### 14.4.6 External Benchmark Metrics (MOSES / GuacaMol) *(IntDiv/SNN/Frag/Scaf/Filters/KL refreshed 2026-09-19 against the current generated outputs; FCD not recomputed — see note below)*
 
@@ -4352,7 +4412,7 @@ GENESIS/
 │   ├── run_molecular_docking.py    Phase 7 docking pipeline
 │   ├── run_multitarget_docking.py  Phase 7b multi-target pipeline
 │   ├── receptors/                  8 PDB + PDBQT receptor files
-│   ├── ligands/                    376 prepared ligand PDBQTs
+│   ├── ligands/                    364 prepared ligand PDBQTs
 │   ├── poses/                      Best docking pose per job (Phase 7)
 │   ├── poses_multitarget/          Best docking pose per job (Phase 7b)
 │   └── results/                    Docking results, summary, scores
@@ -4912,6 +4972,12 @@ Three key stability issues were identified and addressed during Phase 10b develo
 
 ## 25. Phase 10c — Compound Category Annotation & Repurposing Potential
 
+*(Rerun 2026-09-19 against the corrected checkpoint-selection contrastive model — supersedes
+the original 2026-03-23 run, whose output files predated the fix described in §5.3.2. ADMET,
+mucosal-safety, and novelty-class metrics are unchanged, since those do not depend on the
+contrastive model; VP-similarity-dependent and repurposing-score metrics have shifted
+materially and are corrected below.)*
+
 ### 25.1 Motivation
 
 After the GENESIS scoring and ranking pipeline (Phase 10) established final rankings for generative compounds, a parallel question arises: **how do existing compound categories in the master dataset compare in repurposing potential for OSCC?** Three pharmacologically distinct categories were identified from `All_Compounds_Unq_Std.tsv` (72,162 rows, 47 columns):
@@ -4919,7 +4985,7 @@ After the GENESIS scoring and ranking pipeline (Phase 10) established final rank
 | Category | Selection Criterion | Count | Description |
 |----------|-------------------|-------|-------------|
 | **Natural_AntiOSCC** | `IsAnticancer = 2` | 37 | Natural products with experimentally validated OSCC activity |
-| **PLOS_Cmpd** | `in_plos = 1` | 219 | Compounds from curated PLOS literature studies on oral cancer |
+| **PLOS_Cmpd** | `in_plos = 1` | 219 (of 221; 2 failed SMILES parsing) | Compounds from curated PLOS literature studies on oral cancer |
 | **NonAnticancerCmpd** | `IsAnticancer = 0` | 20,584 | Compounds originally developed for non-cancer indications |
 
 Category overlaps: Natural ∩ PLOS = 21, NonAnticancer ∩ PLOS = 38, Natural ∩ NonAnticancer = 0.
@@ -4952,42 +5018,49 @@ Module G: Cross-Category Comparison & Combined Output (TSV + XLSX)
 | ADMET caution | 43.2% | 48.4% | 28.9% |
 | ADMET fail | 16.2% | 10.5% | 5.5% |
 | Mucosal safe rate | 16.2% | 27.9% | **49.3%** |
-| Mean VP similarity | 0.449 | **0.542** | 0.317 |
-| Max VP similarity | 0.911 | 0.982 | **0.993** |
+| Mean VP similarity | 0.310 | **0.372** | 0.078 |
+| Max VP similarity | 0.972 | **0.993** | **0.993** |
 | Mean QED | 0.420 | 0.462 | **0.536** |
 | Mean SA score | **3.71** | **3.83** | 3.06 |
-| Mean repurposing score | 0.391 | **0.427** | 0.328 |
-| Max repurposing score | 0.789 | 0.893 | **0.933** |
-| Compounds with score > 0.5 | 10 (27.0%) | 67 (**30.6%**) | 1,079 (5.2%) |
-| Compounds with score > 0.7 | 2 (5.4%) | 22 (**10.0%**) | 66 (0.3%) |
+| Mean repurposing score | 0.366 | **0.392** | 0.282 |
+| Max repurposing score | 0.808 | 0.904 | **0.936** |
+| Compounds with score > 0.5 | 12 (32.4%) | 66 (**30.1%**) | 823 (4.0%) |
+| Compounds with score > 0.7 | 2 (5.4%) | 18 (**8.2%**) | 60 (0.3%) |
 | Embedding coverage | 100% | 100% | 100% |
 | Novelty: novel | 12 | 68 | 14,387 |
 | Novelty: scaffold_hop | 12 | 47 | 5,350 |
 | Novelty: close_analog | 13 | 104 | 847 |
 
+**Note on the correction**: mean VP similarity dropped substantially for all three categories
+(e.g. NonAnticancerCmpd 0.317→0.078) relative to the pre-correction run, since VP similarity is
+computed directly against the corrected VP centroid (§7) in the corrected contrastive space —
+this is expected and reflects a stricter, more accurate notion of "VP-like" under the fixed
+model, not a data or pipeline error. ADMET, mucosal-safety, and Tanimoto-based novelty-class
+metrics are unaffected, since none of those depend on the contrastive model.
+
 ### 25.4 Key Insights
 
 #### 25.4.1 PLOS Compounds Show Strongest Repurposing Profile
 
-PLOS compounds achieve the highest mean VP similarity (0.542) and repurposing score (0.427). This is expected — these are literature-curated compounds already investigated for oral cancer activity. Their **30.6% rate of scoring >0.5** validates the GENESIS contrastive model: compounds with known OSCC relevance are correctly scored highly by the learned virtual-patient embedding space.
+PLOS compounds achieve the highest mean VP similarity (0.372) and repurposing score (0.392). This is expected — these are literature-curated compounds already investigated for oral cancer activity. Their **8.2% rate of scoring >0.7** (30.1% at >0.5) validates the GENESIS contrastive model: compounds with known OSCC relevance are correctly scored highly by the learned virtual-patient embedding space.
 
 Top 5 PLOS compounds by repurposing score:
 
 | Compound | Repurp. Score | VP Sim | ADMET | QED | Max Phase |
 |----------|:------------:|:------:|:-----:|:---:|:---------:|
-| Gefitinib | 0.893 | 0.981 | PASS | 0.518 | 4 |
-| Colchicine | 0.879 | 0.835 | PASS | 0.833 | 4 |
-| Celecoxib | 0.873 | 0.968 | CAUTION | 0.754 | 4 |
-| Sunitinib | 0.807 | 0.944 | CAUTION | 0.626 | 4 |
-| Nocodazole | 0.803 | 0.949 | PASS | 0.728 | 2 |
+| Colchicine | 0.904 | 0.937 | PASS | 0.834 | 4 |
+| Gefitinib | 0.894 | 0.985 | PASS | 0.520 | 4 |
+| Celecoxib | 0.878 | 0.990 | CAUTION | 0.750 | 4 |
+| Cytarabine | 0.817 | 0.902 | PASS | 0.450 | 4 |
+| Sunitinib | 0.814 | 0.971 | CAUTION | 0.630 | 4 |
 
 #### 25.4.2 NonAnticancer Compounds: NSAIDs Dominate Top Hits
 
-The 66 NonAnticancer compounds scoring >0.7 are overwhelmingly **NSAIDs and COX-2 inhibitors**: Indomethacin (0.933), Lumiracoxib (0.928), Meclofenamic Acid (0.908), Valdecoxib (0.897), Mefenamic Acid (0.894), Ketoprofen (0.893), Flurbiprofen (0.893), Etoricoxib (0.886).
+The 60 NonAnticancer compounds scoring >0.7 are overwhelmingly **NSAIDs and COX-2 inhibitors**: Indomethacin (0.936), Lumiracoxib (0.932), Meclofenamic Acid (0.925), Valdecoxib (0.913), Colchicine (0.904), Ketoprofen (0.901), Mefenamic Acid (0.892), Diclofenac (0.887), Etoricoxib (0.883), Tolmetin (0.879).
 
 This is a biologically significant finding: PTGS2 (COX-2, PDB: 3LN1) is one of the 7 OSCC targets in the GENESIS target set, and the contrastive model independently identifies COX-2 inhibitors as having OSCC-relevant virtual-patient signatures. NKA target analysis of top hits confirms:
-- **36/66** (54.5%) map to Prostaglandin G/H synthase 2 (PTGS2/COX-2)
-- **10/66** (15.2%) map to EGFR
+- **34/60** (56.7%) map to Prostaglandin G/H synthase 2 (PTGS2/COX-2)
+- **7/60** (11.7%) map to EGFR
 - Additional hits map to STAT3, PIK3CA, MDM2 — all GENESIS OSCC targets
 
 This provides orthogonal validation that the contrastive model learned meaningful biology.
@@ -4996,13 +5069,13 @@ This provides orthogonal validation that the contrastive model learned meaningfu
 
 Natural compounds have the lowest ADMET pass rate (40.5%) and mucosal safety (16.2%), which is typical for natural products that have not been optimized for human pharmacokinetics. However, their top compounds are well-known OSCC actives:
 
-| Compound | Repurp. Score | VP Sim | ADMET | Mucosal | SA Score |
-|----------|:------------:|:------:|:-----:|:-------:|:--------:|
-| Resveratrol | 0.789 | 0.799 | PASS | LOW | 3.71 |
-| Quercetin | 0.709 | 0.851 | CAUTION | LOW | 3.83 |
-| 3,3'-Diindolylmethane | 0.612 | 0.832 | PASS | MODERATE | 3.06 |
-| Kaempferol | 0.590 | 0.759 | PASS | LOW | 3.06 |
-| Vincristine | 0.586 | 0.506 | CAUTION | LOW | 3.06 |
+| Compound | Repurp. Score | VP Sim | ADMET | Mucosal | QED |
+|----------|:------------:|:------:|:-----:|:-------:|:---:|
+| Resveratrol | 0.808 | 0.875 | PASS | LOW | 0.69 |
+| Quercetin | 0.728 | 0.926 | CAUTION | LOW | 0.43 |
+| Sulforaphane | 0.653 | 0.955 | CAUTION | SAFE | 0.27 |
+| Kaempferol | 0.613 | 0.856 | PASS | LOW | 0.55 |
+| Fisetin | 0.590 | 0.923 | CAUTION | LOW | 0.51 |
 
 These represent prime candidates for the Phase 9b lead optimization pipeline — combining their validated biological activity with ADMET-guided structural optimization.
 
@@ -5010,7 +5083,7 @@ These represent prime candidates for the Phase 9b lead optimization pipeline —
 
 The category analysis serves as a multi-layered validation:
 
-1. **Sensitivity**: PLOS compounds (known OSCC-relevant) score significantly higher than the general NonAnticancer pool (mean 0.427 vs 0.328, p << 0.001), confirming the model discriminates OSCC-relevant chemistry.
+1. **Sensitivity**: PLOS compounds (known OSCC-relevant) score significantly higher than the general NonAnticancer pool (mean 0.392 vs 0.282), confirming the model discriminates OSCC-relevant chemistry.
 2. **Specificity**: NonAnticancer compounds that score highly (>0.7) map overwhelmingly to OSCC-relevant targets (COX-2, EGFR, PIK3CA, STAT3), not random off-target mechanisms.
 3. **Biological coherence**: The COX-2 inhibitor enrichment in top NonAnticancer hits is consistent with extensive literature on COX-2 overexpression in OSCC and the role of inflammation in oral carcinogenesis.
 4. **Drug-likeness trade-off**: NonAnticancer compounds show better ADMET (65.6% pass) and mucosal safety (49.3%) because they were designed as drugs, while natural products and PLOS compounds sacrifice ADMET for potency.
@@ -5019,10 +5092,10 @@ The category analysis serves as a multi-layered validation:
 
 | Range | Natural_AntiOSCC | PLOS_Cmpd | NonAnticancerCmpd |
 |-------|:----------------:|:---------:|:-----------------:|
-| > 0.7 (high priority) | 2 (5.4%) | 22 (10.0%) | 66 (0.3%) |
-| 0.5–0.7 (moderate) | 8 (21.6%) | 45 (20.5%) | 1,013 (4.9%) |
-| 0.3–0.5 (low) | 13 (35.1%) | 76 (34.7%) | 6,445 (31.3%) |
-| < 0.3 (minimal) | 14 (37.8%) | 76 (34.7%) | 13,060 (63.4%) |
+| > 0.7 (high priority) | 2 (5.4%) | 18 (8.2%) | 60 (0.3%) |
+| 0.5–0.7 (moderate) | 10 (27.0%) | 48 (21.9%) | 763 (3.7%) |
+| 0.3–0.5 (low) | 12 (32.4%) | 80 (36.5%) | 8,808 (42.8%) |
+| < 0.3 (minimal) | 13 (35.1%) | 73 (33.3%) | 10,953 (53.2%) |
 
 ### 25.6 Output Files
 
@@ -5042,11 +5115,11 @@ The category annotation pipeline achieves three objectives:
 
 1. **Validates the GENESIS contrastive model** — the learned VP embedding correctly ranks known OSCC compounds (PLOS) above the general population, and the top NonAnticancer hits are biologically coherent (COX-2 inhibitors, EGFR inhibitors).
 
-2. **Identifies actionable repurposing candidates** — 66 NonAnticancer compounds with repurposing score >0.7 represent FDA-approved/clinical-stage drugs (Indomethacin, Celecoxib, Etoricoxib, Baricitinib) that could be fast-tracked for OSCC clinical trials due to established safety profiles and low regulatory burden.
+2. **Identifies actionable repurposing candidates** — 60 NonAnticancer compounds with repurposing score >0.7 represent FDA-approved/clinical-stage drugs (Indomethacin, Lumiracoxib, Meclofenamic Acid, Valdecoxib) that could be fast-tracked for OSCC clinical trials due to established safety profiles and low regulatory burden.
 
-3. **Prioritizes natural product optimization** — the 10 Natural_AntiOSCC compounds scoring >0.5 (Resveratrol, Quercetin, DIM, Kaempferol, etc.) are validated leads for Phase 9b scaffold-constrained generation to improve their ADMET profiles while preserving OSCC activity.
+3. **Prioritizes natural product optimization** — the 12 Natural_AntiOSCC compounds scoring >0.5 (Resveratrol, Quercetin, Sulforaphane, Kaempferol, Fisetin, etc.) are validated leads for Phase 9b scaffold-constrained generation to improve their ADMET profiles while preserving OSCC activity.
 
 ---
 
-*Document updated: 2026-03-23*
+*Document updated: 2026-09-19 (full section-by-section review against the corrected checkpoint-selection model: §§2–14 generative-method results corrected from a stale 3-seed {42,123,456} evaluation to the current 5-seed {42,123,456,789,1337} evaluation, including honest retraction/reframing of the cVAE "significant improvement," CGLF "best SA score," and CRAVE "seed-invariant" claims; §25 category-annotation results rerun against the corrected checkpoint. See `documents/manuscript_ground_truth.json` and `documents/verify_manuscript_numbers.py` for the independently re-derivable authoritative numbers.)*
 *GENESIS: Generative Exploration of Novel Entities for Selective Inhibitor Synthesis*
