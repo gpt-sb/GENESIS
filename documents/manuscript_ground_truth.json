@@ -77,8 +77,8 @@
         "FlatSupCon": 0.526,
         "BCE": 0.364,
         "ECFP4_kNN": 0.542,
-        "RF": 0.787,
-        "XGB": 0.735,
+        "RF": "0.7874\u00b10.0006",
+        "XGB": "0.7351\u00b10.0000",
         "LR": null
       },
       "cliff_pair_accuracy": {
@@ -95,9 +95,9 @@
         "FlatSupCon": 0.97,
         "BCE": 0.867,
         "ECFP4_kNN": null,
-        "RF": 0.909,
-        "XGB": 0.881,
-        "LR": 0.856
+        "RF": "0.9100\u00b10.0007",
+        "XGB": "0.8806\u00b10.0000",
+        "LR": "0.8564\u00b10.0000"
       },
       "pchembl_mse": {
         "PGCL": "0.420\u00b10.080 (no true PGCL equivalent, placeholder basis, unchanged)",

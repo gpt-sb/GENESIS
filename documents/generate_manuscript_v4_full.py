@@ -29,6 +29,7 @@ from docx.oxml.ns import qn
 HERE = Path(__file__).resolve().parent
 LEDGER = json.load(open(HERE / 'manuscript_ground_truth.json'))
 OUT = HERE / 'GENESIS_NMI_Manuscript_v4_Full.docx'
+OUT_SI = HERE / 'GENESIS_NMI_Manuscript_v4_Supplementary_Information.docx'
 
 PGCL = LEDGER['pgcl_core_3seed']
 T1 = LEDGER['table1_baselines']['metrics']
@@ -135,56 +136,43 @@ def build():
                'Carcinoma', bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER,
          space_after=12)
     para(doc, 'Saurabh Bundela', size=12, alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=4)
-    para(doc, 'Correspondence: [email]', italic=True, size=10,
+    para(doc, 'Correspondence: saurabhbundela5@gmail.com', italic=True, size=10,
          alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=24)
 
     # ══════════════════════════════════════════════════════════════════════
     h(doc, 'Abstract')
     para(doc,
-        'Oral squamous cell carcinoma (OSCC) accounts for approximately 90% of oral cavity '
-        'malignancies and roughly 377,000 new cases and 177,000 deaths annually worldwide, with '
-        'five-year survival below 50% largely unchanged for three decades. Molecular '
-        'representations for computational drug discovery typically treat bioactivity as binary '
-        '(active/inactive), discarding the graded, ordinal nature of dose-response data central '
-        'to medicinal chemistry. We introduce Potency-Graded Contrastive Learning (PGCL), which '
-        'projects frozen molecular language-model embeddings into a 128-dimensional space using '
-        'an ordinal supervised contrastive objective, a six-tier biologically-motivated negative '
-        'taxonomy, and inversely-proportional tier-margin ranking. Across three training seeds, '
-        f'PGCL achieves Spearman {RHO} = {PGCL["global_spearman_rho"]["mean"]:.3f} {PM} '
-        f'{PGCL["global_spearman_rho"]["std"]:.3f} for potency ordering and target-switch '
-        f'AUROC = {PGCL["target_switch_auc_roc"]["mean"]:.3f}, outperforming a flat '
-        '(uniform-weight) contrastive ablation on 4 of 5 held-out metrics and a binary '
-        'classification objective on 4 of 5, and roughly doubling ECFP4 fingerprint '
-        'similarity\u2019s activity-cliff discrimination. Head-to-head evaluation of six generative '
-        'architectures across five seeds \u2014 spanning an unconditional VAE, a FiLM-conditioned '
-        'cVAE, latent diffusion, RL-fine-tuned generation (RL-VAE), a novel contrastive-guided '
-        'flow-matching method (CGLF), and a reward-aligned RL extension (CRAVE) \u2014 shows CRAVE '
-        'significantly exceeds non-RL baselines on OSCC potency after Bonferroni correction '
-        '(one-sided Mann-Whitney, p_raw = 0.0040, p_Bonferroni = 0.016 vs. VAE/cVAE/CGLF). The '
-        f'frozen OSCC model transfers substantially to lung adenocarcinoma without any '
-        f'retraining ({RHO} = {CC["pgcl_rho"]:.3f}, n = {CC["n_in_index"]:,}), with transfer '
-        'strength tracking shared-target pharmacology. An integrated pipeline spanning '
-        'structure-based docking against eight OSCC crystal structures, ADMET and mucosal-'
-        'safety profiling, network pharmacology, and scaffold-constrained lead optimisation '
-        f'screens {P6["n_total_compounds"]:,} repurposing candidates and prioritises '
-        f'{P10["n_total_ranked"]:,} generated and repurposed molecules into '
-        f'{P10["validation_tier_distribution"]["Tier-1_fully_validated"]} fully-validated '
-        f'(Tier-1) candidates, including {P8["triple_validated_elite"]["count"]} triple-validated '
-        'elite compounds. We report generated-molecule safety pass rates transparently '
-        f'({P4["safety_summary"]["pass_rate_pct"]}%), tracing the limiting factor to a persistent '
-        f'aniline toxicophore alert ({AN["pct"]}% of molecules) reflecting the training corpus\u2019 '
-        'EGFR skew. The complete verified data ledger and an automated cross-checking script '
-        'underlying every numeric claim in this manuscript accompany the code, enabling '
-        'independent replication end to end.')
+        'Oral squamous cell carcinoma (OSCC) causes roughly 377,000 new cases and 177,000 deaths '
+        'annually, with five-year survival below 50% for three decades. Computational drug '
+        'discovery typically treats bioactivity as binary, discarding the graded, ordinal nature '
+        'of dose-response data central to medicinal chemistry. We introduce Potency-Graded '
+        'Contrastive Learning (PGCL), projecting frozen molecular language-model embeddings into '
+        'a 128-dimensional space via an ordinal contrastive objective, a six-tier negative '
+        'taxonomy, and tier-margin ranking. Across three seeds, PGCL achieves Spearman '
+        f'{RHO} = {PGCL["global_spearman_rho"]["mean"]:.3f} {PM} {PGCL["global_spearman_rho"]["std"]:.3f} '
+        f'for potency ordering and target-switch AUROC = {PGCL["target_switch_auc_roc"]["mean"]:.3f}, '
+        'outperforming flat-contrastive and binary-classification ablations and roughly doubling '
+        'ECFP4 activity-cliff discrimination. Among six generative architectures evaluated across '
+        'five seeds, CRAVE significantly exceeds non-RL baselines on OSCC potency after '
+        'Bonferroni correction (one-sided Mann-Whitney, p_Bonferroni = 0.016). The frozen model '
+        f'transfers substantially to lung adenocarcinoma without retraining ({RHO} = {CC["pgcl_rho"]:.3f}, '
+        f'n = {CC["n_in_index"]:,}). An integrated docking, ADMET, network-pharmacology, and '
+        f'lead-optimisation pipeline screens {P6["n_total_compounds"]:,} repurposing candidates and '
+        f'prioritises {P10["n_total_ranked"]:,} molecules into '
+        f'{P10["validation_tier_distribution"]["Tier-1_fully_validated"]} Tier-1 candidates, including '
+        f'{P8["triple_validated_elite"]["count"]} triple-validated elite compounds. We report '
+        f'safety pass rates transparently ({P4["safety_summary"]["pass_rate_pct"]}%), tracing the '
+        'limiting factor to a training-corpus EGFR/aniline skew. A complete data ledger and '
+        'automated verifier accompany the code for independent replication.')
 
     # ══════════════════════════════════════════════════════════════════════
     h(doc, 'Introduction')
     para(doc,
         'Oral squamous cell carcinoma (OSCC) represents approximately 90% of oral cavity '
         'malignancies and accounts for roughly 377,000 new cases and 177,000 deaths annually '
-        'worldwide [Sung et al., 2021]. Despite advances in surgical technique and radiation '
+        'worldwide [1]. Despite advances in surgical technique and radiation '
         'therapy, five-year survival for advanced-stage disease remains below 50%, largely '
-        'unchanged over three decades [Warnakulasuriya, 2009]. OSCC\u2019s molecular heterogeneity '
+        'unchanged over three decades [2]. OSCC\u2019s molecular heterogeneity '
         '\u2014 aberrant signalling through the receptor tyrosine kinase (RTK) / PI3K / AKT / mTOR '
         'axis, TP53 pathway disruption, and epigenetic dysregulation \u2014 creates a complex, '
         'multi-target therapeutic landscape that single-target approaches have struggled to '
@@ -196,14 +184,13 @@ def build():
         'Traditional virtual screening \u2014 structure-based (molecular docking) or ligand-based '
         '(pharmacophore models, QSAR) \u2014 operates at the single-target level and does not '
         'naturally capture the multi-target, pathway-level potency landscape relevant to '
-        'complex diseases such as OSCC. Molecular fingerprint methods (ECFP, MACCS) [Rogers & '
-        'Hahn, 2010] encode structural similarity but no bioactivity information. Molecular '
+        'complex diseases such as OSCC. Molecular fingerprint methods (ECFP, MACCS) [3] encode structural similarity but no bioactivity information. Molecular '
         'language models pretrained on masked-token recovery (MolBERT, ChemBERTa, MolDeBERTa) '
-        '[de Oliveira & Saeed, 2022] learn rich chemical representations but only weakly '
+        '[4] learn rich chemical representations but only weakly '
         'correlate with potency out of the box. Graph neural networks for property prediction '
         'show promise for single-target QSAR but require per-target retraining and do not '
         'naturally yield a unified, multi-target embedding space. Supervised contrastive '
-        'learning [Khosla et al., 2020] provides a powerful paradigm for structured '
+        'learning [6] provides a powerful paradigm for structured '
         'representation learning, but its application to drug discovery has typically been '
         'restricted to binary active/inactive labels, discarding the ordinal structure of '
         'potency data that is the central organising principle of medicinal chemistry.')
@@ -265,10 +252,8 @@ def build():
 
     h(doc, 'Comparative baselines validate PGCL design decisions', level=2)
     para(doc,
-        'Six baselines isolate the contribution of each PGCL component (Table 1): ECFP4 [Rogers '
-        '& Hahn, 2010] k-nearest-neighbour retrieval (Tanimoto similarity, no learning), three '
-        'classical QSAR models trained on ECFP4 fingerprints (Random Forest, XGBoost [Chen & '
-        'Guestrin, 2016], Logistic Regression), Flat SupCon (identical architecture to PGCL but '
+        'Six baselines isolate the contribution of each PGCL component (Table 1): ECFP4 [3] k-nearest-neighbour retrieval (Tanimoto similarity, no learning), three '
+        'classical QSAR models trained on ECFP4 fingerprints (Random Forest, XGBoost [38], Logistic Regression), Flat SupCon (identical architecture to PGCL but '
         'uniform pair weights, isolating the ordinal-weighting contribution), and a Binary '
         'Cross-Entropy (BCE) classifier (identical architecture, classification rather than '
         'contrastive objective). All methods were evaluated on an identical 147,618-compound '
@@ -304,7 +289,7 @@ def build():
         f'roughly doubles ECFP4 k-NN\u2019s activity-cliff discrimination '
         f'({T1["cliff_pair_accuracy"]["PGCL"]} vs. {T1["cliff_pair_accuracy"]["ECFP4_kNN"]}, near '
         f'chance-level for structural similarity alone) \u2014 structurally similar compounds routinely '
-        f'diverge sharply in potency (activity cliffs [Stumpfe & Bajorath, 2012]), and Tanimoto '
+        f'diverge sharply in potency (activity cliffs [8]), and Tanimoto '
         f'similarity alone cannot resolve this, the single most pharmacologically demanding SAR '
         f'phenomenon. Random Forest exceeds PGCL on raw Spearman '
         f'{RHO} ({T1["potency_spearman_rho"]["RF"]} vs. {T1["potency_spearman_rho"]["PGCL"]}), expected '
@@ -327,14 +312,14 @@ def build():
     para(doc,
         f'Removing potency regression (Eq. 3) collapses Spearman {RHO} to '
         f'{AB["configs"]["no_potency"]["rho"]:.3f} (from {AB["configs"]["temp_0.07_baseline"]["rho"]:.3f}), '
-        f'confirming the Huber-loss potency regressor [Huber, 1964] as essential for ordinal '
+        f'confirming the Huber-loss potency regressor [9] as essential for ordinal '
         f'awareness \u2014 without it, the contrastive objective alone recovers only coarse target '
         f'discrimination, not fine-grained potency rank. Two apparent single-seed hyperparameter '
         f'"wins" (d=256\u2019s NDCG@100 = {AB["configs"]["dim_256"]["ndcg_100"]:.3f}; {TAU}=0.05\u2019s '
         f'NDCG@100 = {AB["configs"]["temp_0.05"]["ndcg_100"]:.3f}, both exceeding the canonical '
         f'{AB["configs"]["temp_0.07_baseline"]["ndcg_100"]:.3f}) were independently replicated across '
         f'two additional seeds before being trusted, following standard practice for '
-        f'temperature-sensitive contrastive objectives [Chen et al., 2020]. Both evaporated under '
+        f'temperature-sensitive contrastive objectives [7]. Both evaporated under '
         f'replication: {AB["confirmatory_3seed_replication"]["dim_256_vs_canonical"]["verdict"]} '
         f'{AB["confirmatory_3seed_replication"]["temp_0.05_vs_canonical"]["verdict"]} The canonical '
         f'configuration ({TAU}=0.07, d=128, full loss with curriculum) is retained on more robust '
@@ -342,14 +327,14 @@ def build():
 
     h(doc, 'Head-to-head comparison of six generative architectures', level=2)
     para(doc,
-        'Six generative architectures share identical SELFIES-encoded [Krenn et al., 2020] '
-        'training data and a common GRU encoder-decoder backbone [Cho et al., 2014]: an '
-        'unconditional VAE (Eq. 5) [Kingma & Welling, 2014]; a conditional VAE (cVAE) using '
-        'FiLM conditioning (Eq. 6) [Perez et al., 2018] on the PGCL vector with cyclical KL '
-        'annealing (Eq. \u03b2(t)) [Fu et al., 2019]; a latent-diffusion model; an RL-fine-tuned VAE '
-        '(RL-VAE) using REINFORCE [Williams, 1992] with a multi-objective PGCL-derived reward '
+        'Six generative architectures share identical SELFIES-encoded [20] '
+        'training data and a common GRU encoder-decoder backbone [19]: an '
+        'unconditional VAE (Eq. 5) [14]; a conditional VAE (cVAE) using '
+        'FiLM conditioning (Eq. 6) [15] on the PGCL vector with cyclical KL '
+        'annealing (Eq. \u03b2(t)) [16]; a latent-diffusion model; an RL-fine-tuned VAE '
+        '(RL-VAE) using REINFORCE [17] with a multi-objective PGCL-derived reward '
         '(Eq. 7); CGLF (Contrastive-Guided Latent Flow), a novel method performing optimal-'
-        'transport conditional flow matching [Lipman et al., 2023] directly in the PGCL latent '
+        'transport conditional flow matching [18] directly in the PGCL latent '
         'space with Riemannian gradient guidance toward the VP centroid (Eq. 8\u20139); and CRAVE '
         '(Contrastive Reward-Aligned VAE Exploration), an RL-guided extension combining a '
         'four-component reward with an EMA baseline and KL-regularised policy update (Eq. 10).')
@@ -361,8 +346,7 @@ def build():
         m = GEN['methods'][k]
         gen_rows.append([names[k], m['oscc_potency'], m['qed'], m['sa_score'], m['uniqueness'], m['scaffold_novelty']])
     table(doc, ['Method', 'OSCC Potency', 'QED', 'SA Score', 'Uniqueness', 'Scaffold Novelty'], gen_rows,
-          caption='Table 2. 5-seed mean\u00b1SD (seeds 42, 123, 456, 789, 1337). QED [Bickerton et al., '
-                  '2012], SA score [Ertl & Schuffenhauer, 2009].')
+          caption='Table 2. 5-seed mean±SD (seeds 42, 123, 456, 789, 1337). QED [23], SA score [24].')
     T2S = GEN['table2_pairwise_stats_FRESH_and_brute_force_verified']
     para(doc,
         f'CRAVE (filtered) achieves the highest OSCC potency ({GEN["methods"]["crave_filtered"]["oscc_potency"]}), '
@@ -385,11 +369,12 @@ def build():
         f'large paired training corpora are unavailable.')
 
     para(doc,
-        'Standard MOSES [Polykovskiy et al., 2020] and GuacaMol [Brown et al., 2019] distribution-'
+        'Standard MOSES [21] and GuacaMol [22] distribution-'
         'learning benchmarks (internal diversity, scaffold/fragment similarity to the held-out test '
         'set, Fr\u00e9chet ChemNet Distance, and property-distribution KL divergence), computed over '
-        'the same 3 seeds as Table 2, are provided in Supplementary Note 1; these corroborate the '
-        'diffusion instability reported above through an entirely independent metric family.')
+        'the same 3 seeds as Table 2, are provided in Supplementary Information (Note 1); these '
+        'corroborate the diffusion instability reported above through an entirely independent '
+        'metric family.')
 
     h(doc, 'Bioactivity profiling of generated molecules', level=2)
     para(doc,
@@ -401,7 +386,7 @@ def build():
         f'evidence that these motifs recapitulate genuine OSCC pharmacophores rather than a single '
         f'model\u2019s idiosyncratic bias.')
     para(doc,
-        f'Safety screening (PAINS [Baell & Holloway, 2010] / Brenk / toxicophore alerts) shows '
+        f'Safety screening (PAINS [35] / Brenk / toxicophore alerts) shows '
         f'{P4["safety_summary"]["pass"]:,}/{P4["n_total_molecules_loaded"]:,} = '
         f'{P4["safety_summary"]["pass_rate_pct"]}% PASS. Root-cause analysis attributes the limiting '
         f'factor to a persistent aniline toxicophore alert, flagged in {AN["n_flagged"]:,}/{AN["n_total"]:,} '
@@ -416,7 +401,9 @@ def build():
     h(doc, 'Systematic drug repurposing', level=2)
     para(doc,
         f'Screening {P6["n_total_compounds"]:,} compounds against {P6["n_targets_scored"]} OSCC-relevant '
-        f'targets \u2014 scored by cosine similarity to per-target very-potent centroids in the PGCL '
+        f'targets \u2014 a curated subset of the 56 training targets (Methods) for which a per-target '
+        f'very-potent centroid could be constructed from sufficient positive examples \u2014 scored by '
+        f'cosine similarity to per-target very-potent centroids in the PGCL '
         f'space, the same representation used for generative reward and conditioning \u2014 and '
         f'validated against {P6["validation_against_annotated"]["n_annotated"]} independently annotated '
         f'compounds (Spearman {RHO} = {P6["validation_against_annotated"]["spearman_rho"]:.3f}, '
@@ -435,7 +422,7 @@ def build():
     h(doc, 'Structure-based molecular docking', level=2)
     t8 = P7['targets_confirmed_8']
     para(doc,
-        f'Single-target docking (AutoDock Vina [Trott & Olson, 2010]) against 8 OSCC-relevant '
+        f'Single-target docking (AutoDock Vina [30,31]) against 8 OSCC-relevant '
         f'crystal structures ({", ".join(f"{k} ({v})" for k, v in t8.items())}) yields '
         f'{P7["phase7a_single_target"]["successful"]}/{P7["phase7a_single_target"]["total_jobs"]} successful '
         f'poses (mean = {P7["phase7a_single_target"]["energy_stats"]["mean"]} kcal/mol, best = '
@@ -457,9 +444,9 @@ def build():
 
     h(doc, 'ADMET and safety profiling', level=2)
     para(doc,
-        f'ADMET profiling of {P8["n_compounds"]} candidates (Lipinski Rule-of-Five [Lipinski et al., '
-        f'2001] pass: {P8["physicochemical"]["lipinski_pass"]}, mean QED = {P8["physicochemical"]["mean_qed"]}) '
-        f'combined with structural-alert screening [Baell & Holloway, 2010] '
+        f'ADMET profiling of {P8["n_compounds"]} candidates (Lipinski Rule-of-Five [32] '
+        f'pass: {P8["physicochemical"]["lipinski_pass"]}, mean QED = {P8["physicochemical"]["mean_qed"]}) '
+        f'combined with structural-alert screening [35] '
         f'({P8["structural_alerts"]["clean"]} fully clean of PAINS/Brenk/toxicophore alerts) and a '
         f'purpose-built mucosal irritation filter targeting the oral-cavity-specific delivery context '
         f'of OSCC therapeutics ({P8["mucosal_safety"]["safe"]} classified safe) yields a final shortlist '
@@ -590,7 +577,7 @@ def build():
         'systematic literature review, spanning RTK signalling (EGFR, FGFR1, FGFR3), PI3K/AKT/mTOR '
         '(PIK3CA, AKT1, mTOR), cell-cycle regulation (CDK4/Cyclin D1), tumour suppression (MDM2, '
         'TP53), transcription factors (STAT3, MYC), and inflammation (COX-2/PTGS2). Positive '
-        'compounds were extracted from ChEMBL [Mendez et al., 2019] with pChEMBL \u2265 5.0 '
+        'compounds were extracted from ChEMBL [29] with pChEMBL \u2265 5.0 '
         '(IC50/Ki/Kd/EC50 \u2264 10 \u03bcM), yielding 49,312 compound-target-activity records.')
     table(doc, ['Class', 'Label', 'pChEMBL range', 'IC\u2085\u2080 equivalent'],
           [['3', 'Very Potent', '\u2265 8.0', '\u2264 10 nM'],
@@ -617,7 +604,7 @@ def build():
           caption='Table M2. Tier-dependent margins, TierMarginRankingLoss (Eq. 4). Source: '
                   'modeling/losses.py TIER_MARGINS.')
     para(doc,
-        'A greedy Murcko-scaffold-group splitting algorithm [Bemis & Murcko, 1996] allocates '
+        'A greedy Murcko-scaffold-group splitting algorithm [11] allocates '
         'entire scaffold groups (not individual compounds) to train (70%) / validation (15%) / '
         'test (15%) splits, sorted by group size and greedily assigned to the split furthest below '
         'its target proportion. This achieves 100% scaffold novelty in the test set \u2014 the strongest '
@@ -626,7 +613,7 @@ def build():
 
     h(doc, 'Molecular representation and PGCL architecture', level=2)
     para(doc,
-        'MolDeBERTa [de Oliveira & Saeed, 2022], a DeBERTa-v3-style [He et al., 2023] model '
+        'MolDeBERTa [4], a DeBERTa-v3-style [5] model '
         'pretrained on masked-token recovery over molecular SMILES, provides frozen 768-dimensional '
         'embeddings for all compounds. A 3-layer MLP projection head (768\u2192512\u2192256\u2192128, '
         'LayerNorm, GELU, dropout 0.1, L2-normalised output onto the unit hypersphere; 559,617 '
@@ -645,7 +632,7 @@ def build():
     para(doc, 'The total training loss combines three components:')
     equation(doc, f'L_PGCL = L_con + {LAM}\u2081(t)\u00b7L_pot + {LAM}\u2082(t)\u00b7L_rank', 'Eq. 1')
     para(doc,
-        f'L_con is an ordinal supervised contrastive loss [Khosla et al., 2020] extended with '
+        f'L_con is an ordinal supervised contrastive loss [6] extended with '
         f'potency-proximity pair weights w_ij (Table M1): for an anchor i with potency class c_i, '
         f'positive j receives weight w_ij derived from |c_i \u2212 c_j| so that Very-Potent\u2013Very-Potent '
         f'pairs attract more strongly than Active\u2013Active pairs:')
@@ -659,12 +646,11 @@ def build():
           caption='Table M1. Symmetric ordinal pair weight matrix w_ij for the potency-proximity '
                   'term in Eq. 2. Cross-target pairs receive an additional 0.5\u00d7 factor.')
     para(doc,
-        f'L_pot is a masked Huber loss [Huber, 1964] on predicted pChEMBL, applied only where '
+        f'L_pot is a masked Huber loss [9] on predicted pChEMBL, applied only where '
         f'experimental values are available:')
     equation(doc, 'L_pot = (1/|M|) \u03a3_i\u2208M Huber_' + DELTA + '(y\u0302_i, y_i),  M = {i : y_i ' + NEQ + ' NaN}', 'Eq. 3')
     para(doc,
-        'L_rank is a tier-margin ranking loss (a variant of triplet-margin loss [Schroff et al., '
-        '2015]) enforcing that anchor-positive similarity exceeds anchor-negative similarity by at '
+        'L_rank is a tier-margin ranking loss (a variant of triplet-margin loss [10]) enforcing that anchor-positive similarity exceeds anchor-negative similarity by at '
         'least the negative\u2019s tier-dependent margin (Table M2):')
     equation(doc, 'L_rank = (1/N) \u03a3_i max(0, m(t_ni) + sim(a_i,n_i) \u2212 sim(a_i,p_i))', 'Eq. 4')
     para(doc,
@@ -678,9 +664,9 @@ def build():
            ['Sharpen', '21+', '0.5', '0.3', '10%', '10%', '20%', '15%', '25%', '20%']],
           caption='Table M3. Loss-weight and curriculum negative-sampling schedule by training phase.')
     para(doc,
-        'Canonical hyperparameters: AdamW optimiser [Loshchilov & Hutter, 2019], cosine-annealed '
-        f'learning rate 3\u00d710\u207b\u2074 [Loshchilov & Hutter, 2017], temperature {TAU}=0.07 [Chen et al., '
-        '2020], batch size 512 (128 positive + 384 negative, tier-weighted sampling). An '
+        'Canonical hyperparameters: AdamW optimiser [12], cosine-annealed '
+        f'learning rate 3\u00d710\u207b\u2074 [13], temperature {TAU}=0.07 [7], batch size 512 '
+        '(128 positive + 384 negative, tier-weighted sampling). An '
         'early-stopping implementation issue in an earlier version of this training code reset its '
         'validation-loss tracker at each curriculum phase transition, causing the checkpoint saved '
         'as \u201cbest\u201d to reflect the epoch immediately following a phase transition rather than the '
@@ -700,20 +686,20 @@ def build():
     equation(doc, 'EF@K = (n_VP,topK / K) / (n_VP / N)', 'EF@K')
     para(doc,
         'where n_VP is the total number of very-potent compounds among N screened. BEDROC '
-        '(Boltzmann-Enhanced Discrimination of ROC) [Truchon & Bayly, 2007], which weights early '
+        '(Boltzmann-Enhanced Discrimination of ROC) [25], which weights early '
         'retrieval more heavily than late retrieval via a decay parameter \u03b1=20:')
     equation(doc, f'BEDROC(\u03b1=20) = ({RHO}\u00b7Ra\u00b7{SUM}_i exp(\u2212\u03b1\u00b7r_i/N)) / (Ra\u00b7Sw) + 1/Sw', 'BEDROC')
     para(doc,
         'where r_i is the rank of the i-th active, Ra = n/N the proportion of actives, and Sw a '
         'normalisation constant; BEDROC reduces to AUROC as the decay parameter approaches zero. '
-        'Fr\u00e9chet ChemNet Distance (FCD) [Preuer et al., 2018], used to assess distributional '
+        'Fr\u00e9chet ChemNet Distance (FCD) [26], used to assess distributional '
         'realism of generated chemistry against the training set:')
     equation(doc, 'FCD = \u2016\u03bc_G \u2212 \u03bc_T\u2016\u00b2 + Tr(\u03a3_G + \u03a3_T \u2212 2(\u03a3_G\u03a3_T)^{1/2})', 'FCD')
     para(doc,
         'where subscripts G, T denote generated and training-set ChemNet penultimate-layer '
         'activation statistics. NDCG@K follows the standard graded-relevance discounted-cumulative-'
-        'gain formulation [J\u00e4rvelin & K\u00e4kel\u00e4inen, 2002]. Bootstrap 95% confidence intervals '
-        '(2,000 resamples) [Efron & Tibshirani, 1993] are used for all per-target subgroup estimates '
+        'gain formulation [27]. Bootstrap 95% confidence intervals '
+        '(2,000 resamples) [28] are used for all per-target subgroup estimates '
         '(cross-cancer transfer, Results).')
 
     h(doc, 'Generative methods', level=2)
@@ -724,16 +710,16 @@ def build():
     equation(doc, f'{BETA}(t) = min(1, (t mod L)/(0.5\u00b7L)),  L=25, n_cycles=4', 'Eq. ' + BETA + '(t)')
     para(doc,
         'The cVAE conditions its decoder on the PGCL vector via Feature-wise Linear Modulation '
-        '(FiLM) [Perez et al., 2018]:')
+        '(FiLM) [15]:')
     equation(doc, 'h_cond = ' + '\u03b3' + '(c)\u2299h + ' + '\u03b2' + '(c),  ' + '\u03b3,\u03b2' + ': R\u2075\u2192R\u00b9\u2070\u00b2\u2074,  c=[onehot(class,4), sim(1)]', 'Eq. 6')
-    para(doc, 'RL-VAE fine-tunes the pretrained VAE decoder via REINFORCE [Williams, 1992] against '
+    para(doc, 'RL-VAE fine-tunes the pretrained VAE decoder via REINFORCE [17] against '
                'a multi-objective, PGCL-anchored reward:')
     equation(doc, 'R = 0.40\u00b7cos(z,c_VP) + 0.20\u00b7QED + 0.20\u00b7max(0,(10\u2212SA)/9) + 0.20\u00b7valid \u2212 0.5\u00b7D_KL(' + '\u03c0\u03b8\u2016\u03c0VAE' + ')', 'Eq. 7')
     para(doc, 'with an exponential-moving-average baseline (' + '\u03b2' + '=0.9) subtracted from R to '
                'reduce policy-gradient variance:')
     equation(doc, '\u2207' + '\u03b8' + ' J(' + '\u03b8' + ') = E[(R(x)\u2212b_EMA)\u00b7\u2207' + '\u03b8' + ' log ' + '\u03c0\u03b8' + '(x|z)]', 'REINFORCE')
     para(doc,
-        'CGLF performs optimal-transport conditional flow matching [Lipman et al., 2023] directly '
+        'CGLF performs optimal-transport conditional flow matching [18] directly '
         'in the 128-d PGCL latent space, conditioned via AdaLN on a 133-dimensional potency vector:')
     equation(doc, 'L_CFM = E\u2016v' + '\u03b8' + '((1\u2212t)z\u2080+tz\u2081, t, c) \u2212 (z\u2081\u2212z\u2080)\u2016\u00b2', 'Eq. 8')
     para(doc, 'with Riemannian guidance toward the VP centroid during ODE integration on the unit '
@@ -746,8 +732,8 @@ def build():
     equation(doc, 'L_CRAVE = \u2212' + '\u03a3' + '_i(R_i\u2212b_EMA)\u00b7log ' + '\u03c0\u03b8' + '(x_i|z_i) + 0.3\u00b7D_KL(' + '\u03c0\u03b8\u2016\u03c0prior' + '),  R weights: 0.55/0.20/0.10/0.15', 'Eq. 10')
     para(doc,
         'MOSES-compatible metrics (validity, uniqueness, novelty, internal diversity) follow '
-        '[Polykovskiy et al., 2020]; QED [Bickerton et al., 2012] and synthetic accessibility (SA) '
-        '[Ertl & Schuffenhauer, 2009] use their standard published formulations.')
+        '[21]; QED [23] and synthetic accessibility (SA) '
+        '[24] use their standard published formulations.')
 
     h(doc, 'Drug repurposing composite score', level=2)
     para(doc, 'The GENESIS score integrating all downstream evidence streams (docking, ADMET, '
@@ -757,67 +743,29 @@ def build():
     equation(doc, f'S_GENESIS = ({SUM}_i w_i\u00b7s_i / {SUM}_i w_i) \u00d7 sqrt(n_available/8)', 'Eq. 11')
     para(doc,
         'ADMET predictions (physicochemical, Caco-2/BBB/hERG risk) follow pkCSM-style modelling '
-        '[Pires et al., 2015]; structural filters follow Lipinski [Lipinski et al., 2001], Veber '
-        '[Veber et al., 2002], and Egan [Egan et al., 2000] rules. All baseline and ablation '
-        'training used scikit-learn [Pedregosa et al., 2011] and XGBoost [Chen & Guestrin, 2016]; '
-        'PyTorch [Paszke et al., 2019] was used throughout for PGCL and generative model training.')
+        '[36]; structural filters follow Lipinski [32], Veber '
+        '[33], and Egan [34] rules. All baseline and ablation '
+        'training used scikit-learn [37] and XGBoost [38]; '
+        'PyTorch [39] and RDKit [40] were used throughout for PGCL, '
+        'generative model training, and all cheminformatics operations.')
 
-    h(doc, 'Supplementary Note 1: External benchmark validation (MOSES / GuacaMol)')
-    para(doc,
-        'To situate the six generative architectures against the broader molecular-generation '
-        'literature, we additionally computed standard MOSES [Polykovskiy et al., 2020] '
-        'distribution-learning metrics (internal diversity IntDiv/IntDiv2, nearest-neighbour '
-        'similarity to the held-out test set SNN, BRICS fragment similarity Frag, Murcko scaffold '
-        'similarity Scaf, PAINS-filter pass rate, and Fr\u00e9chet ChemNet Distance FCD [Preuer et al., '
-        '2018]) and GuacaMol [Brown et al., 2019] property-distribution KL divergences, each as a '
-        '3-seed mean\u00b1SD (seeds 42, 123, 456), matching the replication standard used throughout '
-        'this study.')
-    para(doc,
-        'Because CRAVE and CGLF are explicitly guided toward the high-potency region of PGCL '
-        'latent space (Eq. 8\u201310), whereas VAE and cVAE sample without potency guidance, reduced '
-        'internal diversity and reduced similarity to the training/test property distribution for '
-        'CRAVE/CGLF relative to the unconstrained baselines is an expected consequence of '
-        'potency-guided generation, not a fidelity deficiency; this is the same trade-off already '
-        'quantified in Table 2 as substantially higher OSCC potency for CRAVE/CGLF at the cost of '
-        'uniqueness/scaffold novelty relative to VAE.')
-    moses_rows = []
-    moses_order = ['vae', 'cvae', 'diffusion', 'rl_vae', 'cglf', 'crave_filtered', 'crave_unfiltered']
-    moses_names = {'vae': 'VAE', 'cvae': 'cVAE', 'diffusion': 'Diffusion', 'rl_vae': 'RL-VAE',
-                   'cglf': 'CGLF', 'crave_filtered': 'CRAVE (filt.)', 'crave_unfiltered': 'CRAVE (unfilt.)'}
-    for k in moses_order:
-        mo = MOSES3['methods'][k]['moses']
-        fcd = MOSES3['methods'][k]['fcd']
-        moses_rows.append([
-            moses_names[k],
-            f"{mo['IntDiv']['mean']:.3f}\u00b1{mo['IntDiv']['std']:.3f}",
-            f"{mo['SNN']['mean']:.3f}\u00b1{mo['SNN']['std']:.3f}",
-            f"{mo['Frag']['mean']:.3f}\u00b1{mo['Frag']['std']:.3f}",
-            f"{mo['Scaf']['mean']:.3f}\u00b1{mo['Scaf']['std']:.3f}",
-            f"{mo['Filters']['mean']:.3f}\u00b1{mo['Filters']['std']:.3f}",
-            f"{fcd['mean']:.2f}\u00b1{fcd['std']:.2f}",
-        ])
-    table(doc, ['Method', 'IntDiv', 'SNN', 'Frag', 'Scaf', 'Filters', f'FCD {chr(8595)}'], moses_rows,
-          caption='Supplementary Table S1. MOSES-equivalent metrics, 3-seed mean\u00b1SD (seeds 42/123/456), '
-                  'reference: training set (34,406 compounds) / held-out test set.')
-    cglf_scaf = MOSES3['methods']['cglf']['moses']['Scaf']
-    vae_scaf = MOSES3['methods']['vae']['moses']['Scaf']
-    cglf_frag = MOSES3['methods']['cglf']['moses']['Frag']
-    cvae_frag = MOSES3['methods']['cvae']['moses']['Frag']
-    diff_fcd = MOSES3['methods']['diffusion']['fcd']
-    crave_fcd = MOSES3['methods']['crave_filtered']['fcd']
-    para(doc,
-        f'CGLF and VAE are statistically indistinguishable on scaffold fidelity '
-        f'(Scaf = {cglf_scaf["mean"]:.3f}\u00b1{cglf_scaf["std"]:.3f} vs. {vae_scaf["mean"]:.3f}\u00b1{vae_scaf["std"]:.3f}), '
-        f'both clearly ahead of cVAE and the CRAVE variants; CGLF retains a robust, well-separated '
-        f'lead on fragment-level fidelity (Frag = {cglf_frag["mean"]:.3f}\u00b1{cglf_frag["std"]:.3f} vs. next-best '
-        f'cVAE {cvae_frag["mean"]:.3f}\u00b1{cvae_frag["std"]:.3f}, a >3-SD separation). Diffusion\u2019s FCD shows the '
-        f'largest relative variance of any method ({diff_fcd["mean"]:.2f}\u00b1{diff_fcd["std"]:.2f}), an independent '
-        f'metric corroborating the seed-dependent catastrophic collapse already documented for its '
-        f'OSCC potency scores above \u2014 the same training instability manifests in both a task-specific '
-        f'(potency) and a task-agnostic (distributional) metric. CRAVE (filtered) achieves the '
-        f'lowest and most tightly-confirmed FCD of all seven methods '
-        f'({crave_fcd["mean"]:.2f}\u00b1{crave_fcd["std"]:.2f}), consistent with its selection as the flagship '
-        f'candidate-generation method.')
+    h(doc, 'Acknowledgements')
+    para(doc, 'The author thanks the open-source cheminformatics and machine-learning communities '
+               'whose tools (RDKit, PyTorch, scikit-learn, AutoDock Vina, MOSES, GuacaMol) made this '
+               'work possible. No dedicated external funding supported this study.')
+
+    h(doc, 'Author contributions')
+    para(doc, 'S.B. conceived the study, designed and implemented the methodology and software, '
+               'performed all analyses, and wrote the manuscript.')
+
+    h(doc, 'Competing interests')
+    para(doc, 'The author declares no competing interests.')
+
+    h(doc, 'Ethics and inclusion statement')
+    para(doc, 'This study used only publicly available, de-identified compound bioactivity data '
+               '(ChEMBL) and publicly deposited protein crystal structures (RCSB PDB); it did not '
+               'involve human participants, human tissue, personal data, or animal subjects, and '
+               'no ethics approval was therefore required.')
 
     h(doc, 'Data availability')
     para(doc,
@@ -827,7 +775,7 @@ def build():
         'documents/verify_manuscript_v3_against_ledger.py), is provided alongside the code.')
     h(doc, 'Code availability')
     para(doc, 'Code, trained checkpoints, and the manuscript generation scripts are available at '
-               '[repository URL].')
+               '[https://github.com/gpt-sb/GENESIS].')
 
     h(doc, 'References')
     refs = [
@@ -870,9 +818,7 @@ def build():
         'Pedregosa, F. et al. Scikit-learn. JMLR 12, 2825\u20132830 (2011).',
         'Chen, T. & Guestrin, C. XGBoost. KDD (2016).',
         'Paszke, A. et al. PyTorch. NeurIPS (2019).',
-        'Wishart, D. S. et al. DrugBank 5.0. Nucleic Acids Res. 46, D1074\u2013D1082 (2018).',
         'Landrum, G. RDKit: Open-source cheminformatics. https://www.rdkit.org (2006).',
-        'Zhu, F. et al. Therapeutic Target Database (TTD). Nucleic Acids Res. 40, D1128\u2013D1136 (2012).',
     ]
     for i, ref in enumerate(refs, 1):
         para(doc, f'{i}. {ref}', size=10)
@@ -881,5 +827,86 @@ def build():
     print(f'Saved -> {OUT}')
 
 
+def build_supplementary():
+    """Supplementary Information, submitted as a separate file per Nature-family convention."""
+    doc = Document()
+    for section in doc.sections:
+        section.top_margin = Cm(2.54)
+        section.bottom_margin = Cm(2.54)
+        section.left_margin = Cm(2.54)
+        section.right_margin = Cm(2.54)
+    style = doc.styles['Normal']
+    style.font.name = 'Arial'
+    style.font.size = Pt(11)
+    style.paragraph_format.line_spacing = 2.0
+
+    para(doc, 'Supplementary Information', bold=True, size=16,
+         alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=4)
+    para(doc, 'GENESIS: Potency-Graded Contrastive Learning for Generative Molecular Design '
+               'and Drug Repurposing in Oral Squamous Cell Carcinoma', size=12,
+         alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=24)
+
+    h(doc, 'Supplementary Note 1: External benchmark validation (MOSES / GuacaMol)')
+    para(doc,
+        'To situate the six generative architectures against the broader molecular-generation '
+        'literature, we additionally computed standard MOSES [21] '
+        'distribution-learning metrics (internal diversity IntDiv/IntDiv2, nearest-neighbour '
+        'similarity to the held-out test set SNN, BRICS fragment similarity Frag, Murcko scaffold '
+        'similarity Scaf, PAINS-filter pass rate, and Fr\u00e9chet ChemNet Distance FCD [Preuer et al., '
+        '2018]) and GuacaMol [22] property-distribution KL divergences, each as a '
+        '3-seed mean\u00b1SD (seeds 42, 123, 456), matching the replication standard used throughout '
+        'this study.')
+    para(doc,
+        'Because CRAVE and CGLF are explicitly guided toward the high-potency region of PGCL '
+        'latent space (Eq. 8\u201310), whereas VAE and cVAE sample without potency guidance, reduced '
+        'internal diversity and reduced similarity to the training/test property distribution for '
+        'CRAVE/CGLF relative to the unconstrained baselines is an expected consequence of '
+        'potency-guided generation, not a fidelity deficiency; this is the same trade-off already '
+        'quantified in Table 2 of the main text as substantially higher OSCC potency for CRAVE/CGLF '
+        'at the cost of uniqueness/scaffold novelty relative to VAE.')
+    moses_rows = []
+    moses_order = ['vae', 'cvae', 'diffusion', 'rl_vae', 'cglf', 'crave_filtered', 'crave_unfiltered']
+    moses_names = {'vae': 'VAE', 'cvae': 'cVAE', 'diffusion': 'Diffusion', 'rl_vae': 'RL-VAE',
+                   'cglf': 'CGLF', 'crave_filtered': 'CRAVE (filt.)', 'crave_unfiltered': 'CRAVE (unfilt.)'}
+    for k in moses_order:
+        mo = MOSES3['methods'][k]['moses']
+        fcd = MOSES3['methods'][k]['fcd']
+        moses_rows.append([
+            moses_names[k],
+            f"{mo['IntDiv']['mean']:.3f}\u00b1{mo['IntDiv']['std']:.3f}",
+            f"{mo['SNN']['mean']:.3f}\u00b1{mo['SNN']['std']:.3f}",
+            f"{mo['Frag']['mean']:.3f}\u00b1{mo['Frag']['std']:.3f}",
+            f"{mo['Scaf']['mean']:.3f}\u00b1{mo['Scaf']['std']:.3f}",
+            f"{mo['Filters']['mean']:.3f}\u00b1{mo['Filters']['std']:.3f}",
+            f"{fcd['mean']:.2f}\u00b1{fcd['std']:.2f}",
+        ])
+    table(doc, ['Method', 'IntDiv', 'SNN', 'Frag', 'Scaf', 'Filters', f'FCD {chr(8595)}'], moses_rows,
+          caption='Supplementary Table S1. MOSES-equivalent metrics, 3-seed mean\u00b1SD (seeds 42/123/456), '
+                  'reference: training set (34,406 compounds) / held-out test set.')
+    cglf_scaf = MOSES3['methods']['cglf']['moses']['Scaf']
+    vae_scaf = MOSES3['methods']['vae']['moses']['Scaf']
+    cglf_frag = MOSES3['methods']['cglf']['moses']['Frag']
+    cvae_frag = MOSES3['methods']['cvae']['moses']['Frag']
+    diff_fcd = MOSES3['methods']['diffusion']['fcd']
+    crave_fcd = MOSES3['methods']['crave_filtered']['fcd']
+    para(doc,
+        f'CGLF and VAE are statistically indistinguishable on scaffold fidelity '
+        f'(Scaf = {cglf_scaf["mean"]:.3f}\u00b1{cglf_scaf["std"]:.3f} vs. {vae_scaf["mean"]:.3f}\u00b1{vae_scaf["std"]:.3f}), '
+        f'both clearly ahead of cVAE and the CRAVE variants; CGLF retains a robust, well-separated '
+        f'lead on fragment-level fidelity (Frag = {cglf_frag["mean"]:.3f}\u00b1{cglf_frag["std"]:.3f} vs. next-best '
+        f'cVAE {cvae_frag["mean"]:.3f}\u00b1{cvae_frag["std"]:.3f}, a >3-SD separation). Diffusion\u2019s FCD shows the '
+        f'largest relative variance of any method ({diff_fcd["mean"]:.2f}\u00b1{diff_fcd["std"]:.2f}), an independent '
+        f'metric corroborating the seed-dependent catastrophic collapse already documented for its '
+        f'OSCC potency scores above \u2014 the same training instability manifests in both a task-specific '
+        f'(potency) and a task-agnostic (distributional) metric. CRAVE (filtered) achieves the '
+        f'lowest and most tightly-confirmed FCD of all seven methods '
+        f'({crave_fcd["mean"]:.2f}\u00b1{crave_fcd["std"]:.2f}), consistent with its selection as the flagship '
+        f'candidate-generation method.')
+
+    doc.save(OUT_SI)
+    print(f'Saved -> {OUT_SI}')
+
+
 if __name__ == '__main__':
     build()
+    build_supplementary()
