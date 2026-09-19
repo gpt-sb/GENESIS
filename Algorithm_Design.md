@@ -6,24 +6,22 @@
 architecture design, implementation decisions, parameter choices, and biological context
 for all algorithms used in the GENESIS study.*
 
-> **Note on numeric results (2026-09-19, updated 2026-09-20)**: This document's
-> algorithm, architecture, and loss-function descriptions have been reviewed and
-> corrected against the current implementation (see the checkpoint-selection fix in
-> §5.3.2 and the Bug Fixes registry in §15.3). Following an initial pass, the
+> **Note on numeric results (2026-09-19, updated 2026-09-19 later same day)**: This
+> document's algorithm, architecture, and loss-function descriptions have been
+> reviewed and corrected against the current implementation (see the
+> checkpoint-selection fix in §5.3.2 and the Bug Fixes registry in §15.3). The
 > per-phase result numbers in §17 (repurposing), §18 (docking), §20 (ADMET), §21
-> (network pharmacology), §22 (lead optimization), and §23 (final ranking) have since
-> been individually re-queried against the current result files
-> (`repurposing_summary.json`, `docking_results.tsv`, `multitarget_results.tsv`,
-> `admet_summary.json`, `admet_profiles.tsv`, `network_pharmacology_summary.json`,
-> `leadopt_summary.json`, `master_ranked_all.tsv`) and corrected in place, including
-> several qualitative reversals from the earlier report (e.g., generated vs.
-> repurposed docking comparison, the safety-potency relationship, and the identity of
-> top-ranked compounds) that are called out explicitly where they occur rather than
-> silently overwritten. The one section **not** yet re-verified is §14.4 (MOSES /
-> GuacaMol / FCD generative benchmark tables), which requires re-running
-> `scripts/compute_external_benchmarks.py` and `compute_fcd.py` against the current
-> 5-seed generative outputs -- a genuine computation, not a file lookup; see the note
-> at the top of §14.4 for a concrete cost estimate. `documents/manuscript_ground_truth.json`,
+> (network pharmacology), §22 (lead optimization), §23 (final ranking), and §14.4
+> (MOSES/GuacaMol generative benchmarks) have all been individually re-queried or
+> recomputed against current result files and corrected in place, including several
+> qualitative reversals from the earlier report that are called out explicitly where
+> they occur rather than silently overwritten (e.g., generated vs. repurposed docking
+> comparison in §18.7, the safety-potency relationship in §18.13/§20.7, CGLF's
+> scaffold-fidelity claim in §14.4.6). The **one remaining open item** is FCD
+> (Fréchet ChemNet Distance) within §14.4.6: recomputing it requires the `fcd` Python
+> package (a ChemNet-based dependency, likely pulling in TensorFlow plus pretrained
+> weights), which is not installed in this environment; the FCD values shown are
+> carried over from an earlier run and are marked with an asterisk. `documents/manuscript_ground_truth.json`,
 > together with `documents/verify_manuscript_numbers.py`, remains the authoritative,
 > independently re-derivable source for current result numbers.
 
@@ -3676,7 +3674,7 @@ on every primary metric (potency, QED, VP fraction). The only method whose ranki
 (2/3 seeds) or succeed (1/3 seeds) — reinforcing the recommendation against Diffusion
 for production use.
 
-#### 14.4.6 External Benchmark Metrics (MOSES / GuacaMol)
+#### 14.4.6 External Benchmark Metrics (MOSES / GuacaMol) *(IntDiv/SNN/Frag/Scaf/Filters/KL refreshed 2026-09-19 against the current generated outputs; FCD not recomputed — see note below)*
 
 Standard distribution-learning metrics from the MOSES (Polykovskiy et al., 2020) and GuacaMol (Brown et al., 2019) benchmark frameworks provide independent confirmation of generative quality and enable comparison with the broader molecular generation literature.
 
@@ -3684,37 +3682,52 @@ Standard distribution-learning metrics from the MOSES (Polykovskiy et al., 2020)
 
 | Method | IntDiv | IntDiv2 | SNN | Frag | Scaf | Filters | FCD ↓ |
 |--------|--------|---------|-----|------|------|---------|-------|
-| VAE | 0.916 | 0.908 | 0.239 | 0.847 | 0.244 | 0.948 | 47.51 |
-| cVAE | 0.913 | 0.905 | 0.264 | 0.880 | 0.354 | 0.968 | 47.89 |
-| Diffusion | 0.527 | 0.387 | 0.089 | 0.004 | 0.000 | 0.997 | 87.82 |
-| RL-VAE | 0.886 | 0.871 | 0.263 | 0.740 | 0.143 | 0.991 | 56.57 |
-| CGLF | 0.900 | 0.894 | 0.268 | 0.896 | 0.509 | 0.952 | 48.61 |
-| CRAVE (filt.) | 0.859 | 0.846 | 0.240 | 0.636 | 0.002 | 0.993 | 31.35 |
-| CRAVE (unfilt.) | 0.876 | 0.863 | 0.232 | 0.681 | 0.115 | 0.978 | 56.84 |
+| VAE | 0.917 | 0.909 | 0.246 | 0.870 | 0.277 | 0.959 | 47.51* |
+| cVAE | 0.915 | 0.906 | 0.241 | 0.841 | 0.179 | 0.955 | 47.89* |
+| Diffusion | 0.722 | 0.576 | 0.087 | 0.004 | 0.001 | 1.000 | 87.82* |
+| RL-VAE | 0.815 | 0.785 | 0.315 | 0.623 | 0.121 | 0.990 | 56.57* |
+| CGLF | 0.889 | 0.883 | 0.306 | 0.924 | 0.244 | 0.954 | 48.61* |
+| CRAVE (filt.) | 0.767 | 0.743 | 0.324 | 0.553 | 0.006 | 0.996 | 31.35* |
+| CRAVE (unfilt.) | 0.805 | 0.773 | 0.307 | 0.572 | 0.100 | 0.991 | 56.84* |
+
+\* **FCD not recomputed.** These 7 values are unchanged from an earlier run — the
+`compute_external_benchmarks.py` script loads FCD from a pre-existing
+`fcd_results.json` rather than computing it directly, and recomputing it requires
+the `fcd` Python package (a ChemNet-based Fréchet distance implementation), which is
+**not installed** in this environment (`ModuleNotFoundError: No module named 'fcd'`).
+Installing it would pull in a TensorFlow/Keras dependency plus pretrained ChemNet
+weights — a genuine infrastructure change, not a quick fix, so it has been left
+explicitly open rather than silently reused as if verified. All other columns
+(IntDiv, IntDiv2, SNN, Frag, Scaf, Filters) **were** freshly recomputed against the
+current (post-correction, September 2026) generated SMILES files; the recomputation
+took just over 20 minutes of wall-clock time, dominated by SNN's pairwise Tanimoto
+comparison of ~1,000 generated molecules against the 34,406-compound training set
+per method.
 
 IntDiv = internal diversity (1 − mean pairwise Tanimoto); SNN = avg nearest-neighbour Tanimoto to test; Frag = BRICS fragment cosine similarity; Scaf = Murcko scaffold cosine similarity; Filters = fraction passing PAINS.
 
-**GuacaMol KL divergences** (generated vs test-set property distributions):
+**GuacaMol KL divergences** (generated vs test-set property distributions) *(refreshed, 2026-09-19)*:
 
 | Method | logP | QED | MW | TPSA | NumRings | HBA | HBD |
 |--------|------|-----|-----|------|----------|-----|-----|
-| VAE | 0.72 | 0.33 | 0.51 | 0.47 | 0.61 | 0.40 | 0.14 |
-| cVAE | 0.44 | 0.19 | 0.43 | 0.44 | 0.43 | 0.31 | 0.13 |
-| Diffusion | 19.69 | 17.36 | 16.82 | 4.73 | 20.71 | 6.92 | 1.29 |
-| RL-VAE | 3.33 | 2.76 | 5.92 | 0.80 | 1.18 | 0.76 | 0.56 |
-| CGLF | 0.23 | 0.26 | 0.70 | 0.53 | 0.87 | 0.53 | 0.12 |
-| CRAVE (filt.) | 5.13 | 15.41 | 9.79 | 1.03 | 2.59 | 0.95 | 1.67 |
-| CRAVE (unfilt.) | 1.88 | 2.01 | 5.22 | 0.49 | 1.29 | 0.24 | 0.36 |
+| VAE | 0.60 | 0.21 | 0.47 | 0.34 | 0.61 | 0.33 | 0.13 |
+| cVAE | 0.42 | 0.28 | 0.39 | 0.38 | 0.47 | 0.28 | 0.15 |
+| Diffusion | 12.89 | 18.12 | 16.87 | 14.98 | 20.64 | 5.49 | 0.80 |
+| RL-VAE | 1.62 | 2.70 | 2.67 | 0.76 | 1.75 | 0.54 | 0.68 |
+| CGLF | 0.15 | 2.38 | 1.24 | 0.33 | 0.15 | 0.24 | 0.34 |
+| CRAVE (filt.) | 2.70 | 15.31 | 9.48 | 1.59 | 5.57 | 1.47 | 1.81 |
+| CRAVE (unfilt.) | 1.14 | 1.38 | 2.20 | 0.58 | 2.06 | 0.41 | 0.40 |
 
-Key findings:
-- **CGLF** achieves the best overall distributional fidelity: highest Frag (0.896), highest Scaf (0.509), lowest average KL (0.44), confirming flow matching preserves chemical substructure distributions.
-- **CRAVE (filtered)** has the lowest FCD (31.35) but highest QED KL (15.41), reflecting intentional distributional shift toward high-potency, drug-like compounds.
-- **Diffusion** shows catastrophic distributional divergence (KL > 4.7 on all properties), independently confirming mode collapse.
-- All methods except Diffusion pass PAINS filters at > 94.8%, confirming chemical plausibility.
+Key findings *(revised against the fresh recomputation — two qualitative claims from the earlier report no longer hold)*:
+- **CGLF's scaffold-fidelity claim does not hold under the fresh data**: its Scaf score dropped from an earlier-reported 0.509 to **0.244**, and it is no longer the highest — **VAE now has the highest Scaf score (0.277)**. CGLF does retain the highest Frag score (0.924, up slightly from 0.896), so its fragment-level (not scaffold-level) fidelity claim still holds.
+- **CGLF's "lowest average KL" claim also no longer holds**: its QED KL rose sharply to 2.38 (from an earlier-reported 0.26), driven by a distributional shift in the current generated set; CGLF still has the lowest logP and NumRings KL among non-trivial methods, but is not uniformly best across all seven properties.
+- **CRAVE (filtered) still has the lowest FCD** (31.35) among all methods, but this number was not recomputed this pass (see asterisk note above) and should be treated as provisional until the `fcd` package can be installed and FCD recomputed against the current generated set.
+- **Diffusion** still shows severe distributional divergence (KL > 12 on logP/QED/MW/TPSA/NumRings), consistent with the earlier mode-collapse finding, though its IntDiv (0.722, up from 0.527) and IntDiv2 (0.576, up from 0.387) increased substantially with the fresh generation — worth noting as a partial change in severity, not a full reversal.
+- All methods now pass PAINS filters at ≥ 95.4% (Filters column), consistent with the earlier ">94.8%" claim.
 
-**Comparison with published MOSES baselines.** The five MOSES baseline models (CharRNN, VAE, AAE, JTN-VAE, LatentGAN) were trained on 1.6M ZINC molecules — 46× more data than GENESIS's 34.4K OSCC compounds. Despite this, GENESIS methods exceed all published baselines on internal diversity (0.900–0.916 vs. ~0.856) and match on validity (1.000) and drug-likeness filters (0.948–0.968 vs. 0.974–0.997). The FCD gap (47–49 vs. <0.6) arises from three factors: (1) *domain narrowness* — OSCC compounds occupy a restricted submanifold of ChemNet's feature space trained on general ChEMBL, amplifying Euclidean distances for any distributional mismatch; (2) *sample-to-dimension ratio* — GENESIS generates 1K molecules ($n/d \approx 2$, ChemNet penultimate layer) vs. MOSES's 30K ($n/d \approx 59$), producing noisier covariance estimates that inflate the trace term in the Fréchet formula; (3) *reference set scope* — 34.4K OSCC molecules vs. 176K diverse ZINC molecules. Crucially, FCD correctly ranks methods *within* GENESIS (CRAVE filt. 31.35 < VAE/cVAE/CGLF ~47–49 < RL-VAE ~57 < Diffusion 87.82), consistent with all other quality metrics. Cross-benchmark FCD magnitudes are not directly comparable without normalisation for domain breadth and generation protocol.
+**Comparison with published MOSES baselines.** The five MOSES baseline models (CharRNN, VAE, AAE, JTN-VAE, LatentGAN) were trained on 1.6M ZINC molecules — 46× more data than GENESIS's 34.4K OSCC compounds. With the refreshed numbers, GENESIS methods still exceed or match published baselines on internal diversity for most methods (0.72–0.92 vs. ~0.856, though Diffusion and CRAVE variants now fall below the published range) and remain competitive on drug-likeness filters (0.954–1.000 vs. 0.974–0.997). The FCD gap (47–88 vs. <0.6, using the still-unverified stale FCD values) would arise, if confirmed, from the same three factors previously identified: domain narrowness, sample-to-dimension ratio, and reference set scope — but this comparison should be treated as provisional pending FCD recomputation.
 
-CGLF's Fragment similarity of 0.896 on 34.4K compounds recovers 90% of substructure frequency information achieved by models trained on 46× more data, confirming that task-specific small-data generators produce chemically valid and diverse output.
+CGLF's Fragment similarity of 0.924 on 34.4K compounds recovers a large share of substructure frequency information achieved by models trained on 46× more data, confirming that task-specific small-data generators produce chemically valid and diverse output — though, per the revised findings above, this is best framed as a fragment-level (not scaffold-level) result.
 
 ---
 
