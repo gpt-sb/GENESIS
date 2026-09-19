@@ -41,8 +41,9 @@ ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
 
 handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in FLAG_C.values()]
-ax.legend(handles, FLAG_C.keys(), loc="lower right", fontsize=8, title="Safety flag")
+ax.legend(handles, FLAG_C.keys(), loc="upper center", bbox_to_anchor=(0.5, -0.12),
+          ncol=3, fontsize=8, title="Safety flag", frameon=True)
 
-fig.tight_layout()
+fig.tight_layout(rect=[0, 0.06, 1, 1])
 fig.savefig(OUT, dpi=300, facecolor="white")
 print(f"Saved -> {OUT}")
