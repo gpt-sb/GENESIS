@@ -30,6 +30,7 @@ HERE = Path(__file__).resolve().parent
 LEDGER = json.load(open(HERE / 'manuscript_ground_truth.json'))
 OUT = HERE / 'GENESIS_NMI_Manuscript_v4_Full.docx'
 OUT_SI = HERE / 'GENESIS_NMI_Manuscript_v4_Supplementary_Information.docx'
+IMAGES_DIR = HERE / 'images'
 
 PGCL = LEDGER['pgcl_core_3seed']
 T1 = LEDGER['table1_baselines']['metrics']
@@ -116,6 +117,13 @@ def table(doc, headers, rows, caption=None):
 
 def h(doc, text, level=1):
     doc.add_heading(text, level=level)
+
+
+def figure(doc, filename, caption, width_in=6.0):
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run().add_picture(str(IMAGES_DIR / filename), width=Inches(width_in))
+    para(doc, caption, italic=True, size=9, alignment=WD_ALIGN_PARAGRAPH.CENTER, space_after=12)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -218,6 +226,11 @@ def build():
 
     # ══════════════════════════════════════════════════════════════════════
     h(doc, 'Results')
+    figure(doc, 'Fig1_Pipeline_Overview_v2.png',
+           'Figure 1. GENESIS end-to-end pipeline overview, Phase 0-10: PGCL representation '
+           'learning, six-way generative comparison, drug repurposing, structure-based docking, '
+           'ADMET/mucosal-safety profiling, network pharmacology, lead optimisation, and final '
+           'ranking, with headline numbers for each stage.')
 
     h(doc, 'PGCL learns potency-graded molecular representations', level=2)
     para(doc,
@@ -239,6 +252,11 @@ def build():
         f'{PGCL["mean_pctl"]["Active"]:.1f}, negative {PGCL["mean_pctl"]["Neg"]:.1f}) in all three seeds '
         f'\u2014 the projected space recovers a continuous potency gradient rather than a binary boundary, '
         f'the central design goal of the ordinal contrastive objective (Eq. 2).')
+    figure(doc, 'Fig2c_PGCL_Geometry_Clean.png',
+           'Figure 2. Left: 2-D schematic of the 128-dimensional PGCL hypersphere, showing '
+           'potency-class clustering around the very-potent (VP) centroid. Right: dose-response '
+           'monotonicity, mean percentile rank (cosine similarity to the VP centroid) by potency '
+           'class, confirming strict rank order (very-potent > potent > active > negatives).')
     para(doc,
         f'A single Spearman {RHO} definition is used consistently throughout this manuscript: computed '
         f'on all 7,362 test-set positives, identically for PGCL and every baseline. A distinct '
@@ -297,6 +315,10 @@ def build():
         f'provide the continuous embedding, activity-cliff score, or differentiable reward signal '
         f'that PGCL supplies natively for the downstream generative and screening stages of this '
         f'pipeline.')
+    figure(doc, 'Fig4_Baseline_Cliff_Cascade_MOSES.png',
+           'Figure 3. Activity-cliff pair discrimination accuracy across baselines, showing the '
+           'degradation from PGCL/Flat SupCon (metric-space learning) to BCE (binary supervision) '
+           'to ECFP4 Tanimoto similarity alone (near chance level).')
 
     h(doc, 'Hyperparameter and loss-component ablations', level=2)
     ab_rows = []
@@ -367,6 +389,10 @@ def build():
         f'threshold typically required for stable score-based/flow training in a 128-dimensional '
         f'molecular latent space \u2014 a practically relevant finding for low-data disease settings where '
         f'large paired training corpora are unavailable.')
+    figure(doc, 'Fig5_Generative_Method_Radar.png',
+           'Figure 4. Multi-axis comparison of the six generative architectures (OSCC potency, '
+           'QED, synthetic accessibility, uniqueness, scaffold novelty), 5-seed mean, showing '
+           'CRAVE/RL-VAE\u2019s potency advantage and Diffusion\u2019s collapse relative to VAE/cVAE/CGLF.')
 
     para(doc,
         'Standard MOSES [21] and GuacaMol [22] distribution-'
@@ -418,6 +444,9 @@ def build():
         f'coincide with its approved clinical mechanism of action \u2014 a distinction we make explicit '
         f'given the composite score is a repurposing-prioritisation signal, not a mechanism-of-action '
         f'assertion.)')
+    figure(doc, 'Fig8_Repurposing_Waterfall.png',
+           'Figure 5. Top-10 drug repurposing candidates by recommendation weight, with clinical '
+           'phase annotated; EGFR/HER-family kinase inhibitors dominate the top ranks.')
 
     h(doc, 'Structure-based molecular docking', level=2)
     t8 = P7['targets_confirmed_8']
@@ -441,6 +470,9 @@ def build():
         f'best = {P7["phase7b_multitarget"]["energy_stats"]["best"]} kcal/mol) \u2014 a polypharmacology '
         f'profile plausibly advantageous in a molecularly heterogeneous disease such as OSCC, where '
         f'single-target inhibition has historically underperformed.')
+    figure(doc, 'Fig9_Docking_Heatmap_Elite.png',
+           'Figure 6. Multi-target docking energy heatmap for the 50-compound elite candidate set '
+           'across all 7 productive targets, illustrating broad polypharmacology.')
 
     h(doc, 'ADMET and safety profiling', level=2)
     para(doc,
@@ -478,6 +510,10 @@ def build():
         f'pipeline\u2019s own latent distribution and cannot reliably decode arbitrary external '
         f'compounds\u2019 latents back into valid structures, a boundary condition of latent-space '
         f'perturbation methods generally.')
+    figure(doc, 'Fig7_LeadOptimization.png',
+           'Figure 7. (a) ADMET flag distribution, Phase 8 elite parents vs. Phase 9b analogs. '
+           '(b) Analog yield and score improvement from scaffold-constrained latent-space '
+           'perturbation of the 13 triple-validated elite compounds.')
 
     h(doc, 'Integrated final ranking', level=2)
     top1, top2, top3 = P10['top3_overall']
@@ -497,6 +533,10 @@ def build():
         f'{P10["generated_novelty_distribution"]["novel"]["pct"]}% structurally novel (Tanimoto < 0.4 to '
         f'any known compound), {P10["generated_novelty_distribution"]["scaffold_hop"]["pct"]}% scaffold-'
         f'hops, and {P10["generated_novelty_distribution"]["close_analog"]["pct"]}% close analogs.')
+    figure(doc, 'Fig6_TopGeneratedCompounds.png',
+           'Figure 8. Top-ranked de novo generated candidates (GEN_00182, GEN_00133, GEN_00045, '
+           'GEN_00020, GEN_00044, GEN_00069) by GENESIS score, with structures, ADMET flag, and '
+           'novelty classification.')
 
     h(doc, 'Cross-cancer transfer to lung adenocarcinoma', level=2)
     para(doc,
@@ -515,6 +555,11 @@ def build():
         f'size, n={CC["per_target"]["KRAS"]["n"]}) \u2014 a calibrated, mechanistically interpretable '
         f'transferability profile: PGCL encodes pharmacophore geometry that generalises where target '
         f'biology overlaps, and honestly does not where it does not.')
+    figure(doc, 'Fig3_Cross_Cancer_Transfer.png',
+           'Figure 9. Per-target Spearman correlation (with 95% bootstrap CI) for the frozen OSCC '
+           'PGCL model applied to lung adenocarcinoma compounds, showing strong transfer for '
+           'OSCC-shared targets (EGFR, PIK3CA) and weak/non-significant transfer for LUAD-specific '
+           'driver oncogenes (ALK, KRAS).')
 
     # ══════════════════════════════════════════════════════════════════════
     h(doc, 'Discussion')
@@ -546,6 +591,18 @@ def build():
         f'larger ChEMBL bioactivity footprint relative to other OSCC targets), and the generative '
         f'methods faithfully learn and reproduce this skew. This motivates toxicophore-aware '
         f'negative sampling or generation-time filtering as a concrete next step, discussed below.')
+    para(doc,
+        'The complete pipeline reported here (PGCL training, all six generative methods, docking, '
+        'ADMET, and lead optimisation) runs on a single consumer-grade workstation-class GPU/CPU, '
+        'without a dedicated compute cluster \u2014 a practical accessibility advantage for research '
+        'groups without large-scale infrastructure. Figure 10 situates this against representative '
+        'compute/hardware requirements reported for comparable recent generative-chemistry methods; '
+        'those comparator figures are drawn from each method\u2019s own published reporting and have '
+        'not been independently re-verified here, and are included for indicative context only.')
+    figure(doc, 'Fig10_Hardware_Accessibility.png',
+           'Figure 10. Indicative compute/hardware accessibility comparison between this work and '
+           'representative recently published generative molecular design methods (comparator '
+           'figures as self-reported by each method; not independently re-verified in this study).')
     h(doc, 'Limitations', level=2)
     para(doc,
         'The generative safety-PASS finding indicates the current training corpus\u2019 target '
