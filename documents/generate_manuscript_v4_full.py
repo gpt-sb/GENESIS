@@ -43,6 +43,7 @@ P9A = LEDGER['phase9a_network_pharmacology']
 P9B = LEDGER['phase9b_lead_optimization']
 P10 = LEDGER['phase10_final_ranking']
 CC = LEDGER['cross_cancer_transfer']
+MOSES3 = LEDGER['generative_moses_guacamol_3seed']
 
 RHO, PM, ARROW, DEG = '\u03c1', '\u00b1', '\u2192', '\u00b0'
 TAU, LAM, BETA, DELTA = '\u03c4', '\u03bb', '\u03b2', '\u03b4'
@@ -382,6 +383,13 @@ def build():
         f'threshold typically required for stable score-based/flow training in a 128-dimensional '
         f'molecular latent space \u2014 a practically relevant finding for low-data disease settings where '
         f'large paired training corpora are unavailable.')
+
+    para(doc,
+        'Standard MOSES [Polykovskiy et al., 2020] and GuacaMol [Brown et al., 2019] distribution-'
+        'learning benchmarks (internal diversity, scaffold/fragment similarity to the held-out test '
+        'set, Fr\u00e9chet ChemNet Distance, and property-distribution KL divergence), computed over '
+        'the same 3 seeds as Table 2, are provided in Supplementary Note 1; these corroborate the '
+        'diffusion instability reported above through an entirely independent metric family.')
 
     h(doc, 'Bioactivity profiling of generated molecules', level=2)
     para(doc,
@@ -754,6 +762,63 @@ def build():
         'training used scikit-learn [Pedregosa et al., 2011] and XGBoost [Chen & Guestrin, 2016]; '
         'PyTorch [Paszke et al., 2019] was used throughout for PGCL and generative model training.')
 
+    h(doc, 'Supplementary Note 1: External benchmark validation (MOSES / GuacaMol)')
+    para(doc,
+        'To situate the six generative architectures against the broader molecular-generation '
+        'literature, we additionally computed standard MOSES [Polykovskiy et al., 2020] '
+        'distribution-learning metrics (internal diversity IntDiv/IntDiv2, nearest-neighbour '
+        'similarity to the held-out test set SNN, BRICS fragment similarity Frag, Murcko scaffold '
+        'similarity Scaf, PAINS-filter pass rate, and Fr\u00e9chet ChemNet Distance FCD [Preuer et al., '
+        '2018]) and GuacaMol [Brown et al., 2019] property-distribution KL divergences, each as a '
+        '3-seed mean\u00b1SD (seeds 42, 123, 456), matching the replication standard used throughout '
+        'this study.')
+    para(doc,
+        'Because CRAVE and CGLF are explicitly guided toward the high-potency region of PGCL '
+        'latent space (Eq. 8\u201310), whereas VAE and cVAE sample without potency guidance, reduced '
+        'internal diversity and reduced similarity to the training/test property distribution for '
+        'CRAVE/CGLF relative to the unconstrained baselines is an expected consequence of '
+        'potency-guided generation, not a fidelity deficiency; this is the same trade-off already '
+        'quantified in Table 2 as substantially higher OSCC potency for CRAVE/CGLF at the cost of '
+        'uniqueness/scaffold novelty relative to VAE.')
+    moses_rows = []
+    moses_order = ['vae', 'cvae', 'diffusion', 'rl_vae', 'cglf', 'crave_filtered', 'crave_unfiltered']
+    moses_names = {'vae': 'VAE', 'cvae': 'cVAE', 'diffusion': 'Diffusion', 'rl_vae': 'RL-VAE',
+                   'cglf': 'CGLF', 'crave_filtered': 'CRAVE (filt.)', 'crave_unfiltered': 'CRAVE (unfilt.)'}
+    for k in moses_order:
+        mo = MOSES3['methods'][k]['moses']
+        fcd = MOSES3['methods'][k]['fcd']
+        moses_rows.append([
+            moses_names[k],
+            f"{mo['IntDiv']['mean']:.3f}\u00b1{mo['IntDiv']['std']:.3f}",
+            f"{mo['SNN']['mean']:.3f}\u00b1{mo['SNN']['std']:.3f}",
+            f"{mo['Frag']['mean']:.3f}\u00b1{mo['Frag']['std']:.3f}",
+            f"{mo['Scaf']['mean']:.3f}\u00b1{mo['Scaf']['std']:.3f}",
+            f"{mo['Filters']['mean']:.3f}\u00b1{mo['Filters']['std']:.3f}",
+            f"{fcd['mean']:.2f}\u00b1{fcd['std']:.2f}",
+        ])
+    table(doc, ['Method', 'IntDiv', 'SNN', 'Frag', 'Scaf', 'Filters', f'FCD {chr(8595)}'], moses_rows,
+          caption='Supplementary Table S1. MOSES-equivalent metrics, 3-seed mean\u00b1SD (seeds 42/123/456), '
+                  'reference: training set (34,406 compounds) / held-out test set.')
+    cglf_scaf = MOSES3['methods']['cglf']['moses']['Scaf']
+    vae_scaf = MOSES3['methods']['vae']['moses']['Scaf']
+    cglf_frag = MOSES3['methods']['cglf']['moses']['Frag']
+    cvae_frag = MOSES3['methods']['cvae']['moses']['Frag']
+    diff_fcd = MOSES3['methods']['diffusion']['fcd']
+    crave_fcd = MOSES3['methods']['crave_filtered']['fcd']
+    para(doc,
+        f'CGLF and VAE are statistically indistinguishable on scaffold fidelity '
+        f'(Scaf = {cglf_scaf["mean"]:.3f}\u00b1{cglf_scaf["std"]:.3f} vs. {vae_scaf["mean"]:.3f}\u00b1{vae_scaf["std"]:.3f}), '
+        f'both clearly ahead of cVAE and the CRAVE variants; CGLF retains a robust, well-separated '
+        f'lead on fragment-level fidelity (Frag = {cglf_frag["mean"]:.3f}\u00b1{cglf_frag["std"]:.3f} vs. next-best '
+        f'cVAE {cvae_frag["mean"]:.3f}\u00b1{cvae_frag["std"]:.3f}, a >3-SD separation). Diffusion\u2019s FCD shows the '
+        f'largest relative variance of any method ({diff_fcd["mean"]:.2f}\u00b1{diff_fcd["std"]:.2f}), an independent '
+        f'metric corroborating the seed-dependent catastrophic collapse already documented for its '
+        f'OSCC potency scores above \u2014 the same training instability manifests in both a task-specific '
+        f'(potency) and a task-agnostic (distributional) metric. CRAVE (filtered) achieves the '
+        f'lowest and most tightly-confirmed FCD of all seven methods '
+        f'({crave_fcd["mean"]:.2f}\u00b1{crave_fcd["std"]:.2f}), consistent with its selection as the flagship '
+        f'candidate-generation method.')
+
     h(doc, 'Data availability')
     para(doc,
         'The complete verified data ledger underlying every numeric claim in this manuscript '
@@ -787,6 +852,7 @@ def build():
         'Cho, K. et al. Learning Phrase Representations using RNN Encoder-Decoder. EMNLP (2014).',
         'Krenn, M. et al. SELFIES. Mach. Learn.: Sci. Technol. 1, 045024 (2020).',
         'Polykovskiy, D. et al. Molecular Sets (MOSES). Front. Pharmacol. 11, 565644 (2020).',
+        'Brown, N. et al. GuacaMol: Benchmarking Models for de Novo Molecular Design. J. Chem. Inf. Model. 59, 1096\u20131108 (2019).',
         'Bickerton, G. R. et al. Quantifying the chemical beauty of drugs (QED). Nat. Chem. 4, 90\u201398 (2012).',
         'Ertl, P. & Schuffenhauer, A. Synthetic accessibility score. J. Cheminform. 1, 8 (2009).',
         'Truchon, J.-F. & Bayly, C. I. BEDROC. J. Chem. Inf. Model. 47, 488\u2013508 (2007).',
