@@ -6,6 +6,17 @@
 architecture design, implementation decisions, parameter choices, and biological context
 for all algorithms used in the GENESIS study.*
 
+> **Note on numeric results (2026-09-19)**: This document's algorithm, architecture,
+> and loss-function descriptions have been reviewed and corrected against the current
+> implementation (see the checkpoint-selection fix in §5.3.2 and the Bug Fixes registry
+> in §15.3). Many of the specific per-phase result numbers quoted throughout this
+> document (generative benchmark tables in §14.4, ADMET/docking/repurposing statistics
+> in §17-23) reflect an earlier pipeline run and have not all been individually
+> re-verified here. `documents/manuscript_ground_truth.json`, together with
+> `documents/verify_manuscript_numbers.py`, is the authoritative, independently
+> re-derivable source for current result numbers -- consult it rather than this
+> document for any specific reported statistic.
+
 ---
 
 ## Table of Contents
@@ -217,9 +228,9 @@ Positive compounds are OSCC-active molecules from ChEMBL with:
 
 | Class | Label | pChEMBL Range | Biological Meaning |
 |-------|-------|---------------|-------------------|
-| 1 | Active | < 6.0 | Measurable activity (µM range) |
-| 2 | Potent | 6.0 – 7.0 | Sub-µM activity |
-| 3 | Very Potent (VP) | ≥ 7.0 | Low-nM to high-nM activity |
+| 1 | Active | 5.0 – 6.5 | Measurable activity (μM range) |
+| 2 | Potent | 6.5 – 8.0 | Sub-μM activity |
+| 3 | Very Potent (VP) | ≥ 8.0 | Low-nM activity |
 
 This ordinal structure is critical: the contrastive model learns to preserve this
 gradient in the projected space, and the generative models use it as conditioning.
@@ -229,19 +240,24 @@ gradient in the projected space, and the generative models use it as conditionin
 The negative set is constructed with intentional difficulty stratification to provide
 curriculum learning signals of increasing hardness:
 
-| Tier | Name | Source | Rationale | Loss Weight |
+| Tier | Name | Source | Rationale | Margin $m(t)$ |
 |------|------|--------|-----------|-------------|
-| T1 | Target-active, OSCC-irrelevant | Same target family, different disease | Tests target specificity | 1.0 |
-| T2 | Other-cancer actives | Cancer actives that are NOT OSCC | Tests disease specificity | 0.8 |
-| T3A | Activity cliffs (inactive) | Structurally similar to positives but inactive | Hardest negatives — tests potency discrimination | 1.2 |
-| T3B | Structurally similar, untested | Similar Tanimoto but no bioactivity data | Medium difficulty | 0.6 |
-| T3C | Target-switch | Active on OSCC targets, but wrong indication | Tests context sensitivity | 1.0 |
-| T4 | Random ChEMBL | Random drug-like compounds | Easy negatives, anchors embedding space | 0.4 |
+| T1 | Target-active, OSCC-irrelevant | Same target family, different disease | Tests target specificity | 0.20 |
+| T2 | Other-cancer actives | Cancer actives that are NOT OSCC | Tests disease specificity | 0.20 |
+| T3A | Activity cliffs (inactive) | Structurally similar to positives but inactive | Hardest negatives — tests potency discrimination | 0.10 |
+| T3B | Structurally similar, untested | Similar Tanimoto but no bioactivity data | Medium difficulty | 0.30 |
+| T3C | Target-switch | Active on OSCC targets, but wrong indication | Tests context sensitivity | 0.10 |
+| T4 | Random ChEMBL | Random drug-like compounds | Easy negatives, anchors embedding space | 0.30 |
 
-**Design rationale**: The asymmetric loss weights ensure that the model learns
-hardest distinctions (T3A activity cliffs: 1.2×) more aggressively than easy
-ones (T4 random: 0.4×), implementing a form of hard negative mining without
-explicit metric learning.
+**Note (corrected)**: these are the tier-dependent margins $m(t)$ used directly in
+the TierMarginRankingLoss (Eq. 4, `modeling/losses.py: TIER_MARGINS`), verified
+against the training code. An earlier draft of this table showed a different set
+of "loss weight" values (1.0/0.8/1.2/0.6/1.0/0.4) describing a per-tier
+pair-weighting scheme that was superseded by the tier-margin approach below and
+no longer reflects the implementation — hard negatives (T3A, T3C) receive the
+*tightest* margins (0.10), not the highest weights, since the ranking loss
+requires only a small similarity gap to be satisfied for structurally similar
+compounds, while easy negatives (T3B, T4) receive the loosest margins (0.30).
 
 ### 4.3 Scaffold & Target-Family Assignment (Phase 1.4)
 
@@ -770,9 +786,24 @@ early exposure to hard negatives prevents forming the basic cluster structure.
 The primary contrastive loss ($\mathcal{L}_{\text{con}}$) always has weight 1.0. Auxiliary
 losses are introduced gradually to prevent early optimization conflicts.
 
-**Phase transition handling**: When the curriculum phase changes, patience is reset and
-the best val_loss is re-baselined, allowing the model to adapt to the new loss regime
-without premature early stopping.
+**Phase transition handling (corrected)**: When the curriculum phase changes, the
+early-stopping *patience counter* is reset, giving the model a fresh window to
+adapt to the new loss regime before patience can trigger a stop. This patience
+reset is intentional and unchanged. However, an earlier version of the training
+code also used the same `best_val_loss` variable to decide which epoch's weights
+to save as `best.pt` -- meaning a phase-transition reset could cause a mediocre
+epoch immediately following the reset to be saved as "best", silently discarding
+a genuinely superior checkpoint from earlier in the same phase. This was
+identified and fixed: checkpoint selection is now fully decoupled from the
+early-stopping patience criterion. `best.pt` is unconditionally saved as the
+most recently completed epoch's weights, and early stopping (governed by
+patience on `best_val_loss`, still reset at phase transitions) only decides
+*when* training stops, never *which* epoch's weights are kept. A systematic
+epoch-by-epoch scan (evaluating checkpoints at epochs 10, 13, 16, 19, 22, 25
+against the actual downstream metrics: Spearman ρ, cliff accuracy, target-switch
+AUROC, NDCG@100) confirmed these metrics improve monotonically through epoch 25
+and that the pre-fix code was systematically saving an inferior mid-training
+checkpoint rather than the run's true best.
 
 ### 5.4 Optimization
 
@@ -3723,6 +3754,7 @@ Five critical fixes from the UPDATE_1 analysis are pre-integrated:
 | 3 | cglf.py | 133-d conditioning (128-d centroid leak) | 5-d conditioning [potency_oh + sim] | Prevents information leakage |
 | 4 | diffusion.py | Linear noise schedule | Cosine noise schedule | Better sample quality and diversity |
 | 5 | diffusion.py | Float64 operations | Float32 enforcement on MPS | Prevents NaN overflow on Apple Silicon |
+| 6 | train.py (Phase 2, PGCL) | Checkpoint-selection criterion shared the same `best_val_loss` variable as the early-stopping patience counter, which resets at curriculum phase transitions -- a phase-transition reset could silently promote a mediocre post-reset epoch to `best.pt` over a genuinely superior earlier epoch | Decoupled checkpoint saving from the early-stopping criterion entirely; `best.pt` now always reflects the most recently completed training epoch | Confirmed materially better downstream metrics on every one of 6 evaluation tests (see §5.3.2); this was found to be the primary cause of an earlier apparent underperformance of PGCL against simpler baselines |
 
 ---
 
@@ -4312,7 +4344,7 @@ Phase 7/7b compounds (375)
   ├─ Module D: Structural Alerts (PAINS, Brenk, 10 toxicophores, 9 extended)
   ├─ Module E: Mucosal Irritation Filter (27 SMARTS alerts, amphiphilic index, pH risk)
   ├─ Module F: Integrated ADMET Scoring (weighted geometric mean of 6 components)
-  └─ Module G: Final Candidate Shortlist → 12 triple-validated elite candidates
+  └─ Module G: Final Candidate Shortlist → 13 triple-validated elite candidates
 ```
 
 ### 20.3 Mucosal Irritation Filter (Novel)
@@ -4709,7 +4741,7 @@ The score separation between tiers confirms the evidence-completeness penalty is
 
 4. **Evidence-completeness penalty prevents false positives** — without this penalty, Tier-4 compounds (with only QED data) would score artificially high. The $\sqrt{\text{completeness}}$ multiplier ensures that high scores require multi-level validation evidence, while still preserving rank order within each tier.
 
-5. **345 recommended compounds provide a actionable shortlist** — these are the compounds with at least docking OR ADMET evidence, eliminating pure prediction-only candidates from the clinical consideration set while retaining all validated novel compounds.
+5. **316 recommended compounds provide a actionable shortlist** — these are the compounds with at least docking OR ADMET evidence, eliminating pure prediction-only candidates from the clinical consideration set while retaining all validated novel compounds.
 
 ---
 
