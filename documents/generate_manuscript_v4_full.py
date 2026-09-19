@@ -372,15 +372,22 @@ def build():
     table(doc, ['Method', 'OSCC Potency', 'QED', 'SA Score', 'Uniqueness', 'Scaffold Novelty'], gen_rows,
           caption='Table 2. 5-seed mean±SD (seeds 42, 123, 456, 789, 1337). QED [23], SA score [24].')
     T2S = GEN['table2_pairwise_stats_FRESH_and_brute_force_verified']
+    stat_rows = []
+    for comp, disp in [('CRAVE_vs_VAE', 'CRAVE (filt.) vs. VAE'), ('CRAVE_vs_cVAE', 'CRAVE (filt.) vs. cVAE'),
+                        ('CRAVE_vs_CGLF', 'CRAVE (filt.) vs. CGLF'), ('CRAVE_vs_RLVAE', 'CRAVE (filt.) vs. RL-VAE')]:
+        s = T2S[comp]
+        stat_rows.append([disp, str(s['U']), f'{s["p_raw"]:.4f}', f'{s["p_bonferroni_x4"]:.4f}',
+                           f'{s["cliffs_delta"]:.2f}', 'Yes' if s['significant'] else 'No'])
+    table(doc, ['Comparison', 'U', 'p (raw)', 'p (Bonferroni ×4)', f'Cliff\u2019s {DELTA}', 'Significant?'],
+          stat_rows,
+          caption='Table 2b. Pairwise OSCC-potency comparisons of CRAVE (filtered) against each other '
+                  'method (one-sided Mann-Whitney U, H1: CRAVE (filt.) > comparator, n=5 seeds each; '
+                  'Bonferroni correction across the four planned comparisons; \u03b1=0.05).')
     para(doc,
         f'CRAVE (filtered) achieves the highest OSCC potency ({GEN["methods"]["crave_filtered"]["oscc_potency"]}), '
         f'significantly exceeding VAE, cVAE, and CGLF after Bonferroni correction across four planned '
-        f'comparisons (one-sided Mann-Whitney U, n=5 seeds each; '
-        f'U={T2S["CRAVE_vs_VAE"]["U"]}, p_raw={T2S["CRAVE_vs_VAE"]["p_raw"]:.4f}, '
-        f'p_Bonferroni={T2S["CRAVE_vs_VAE"]["p_bonferroni_x4"]:.4f} for VAE/cVAE/CGLF alike; Cliff\u2019s '
-        f'{DELTA} = {T2S["CRAVE_vs_VAE"]["cliffs_delta"]:.2f}, complete rank separation). CRAVE does '
-        f'not significantly exceed RL-VAE (U={T2S["CRAVE_vs_RLVAE"]["U"]}, '
-        f'p_raw={T2S["CRAVE_vs_RLVAE"]["p_raw"]:.4f}, p_Bonferroni={T2S["CRAVE_vs_RLVAE"]["p_bonferroni_x4"]:.4f}), '
+        f'comparisons (Table 2b; complete rank separation in all three, Cliff\u2019s {DELTA} = 1.00). CRAVE does '
+        f'not significantly exceed RL-VAE (Table 2b), '
         f'consistent with both methods sharing the same underlying RL-guided exploration mechanism '
         f'and PGCL-derived reward signal (Eq. 7).')
     para(doc,
