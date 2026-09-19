@@ -481,8 +481,10 @@ def build():
         f'profile plausibly advantageous in a molecularly heterogeneous disease such as OSCC, where '
         f'single-target inhibition has historically underperformed.')
     figure(doc, 'Fig9_Docking_Heatmap_Elite.png',
-           'Figure 6. Multi-target docking energy heatmap for the 50-compound elite candidate set '
-           'across all 7 productive targets, illustrating broad polypharmacology.')
+           f'Figure 6. Multi-target docking energy heatmap for the {P8["triple_validated_elite"]["count"]} '
+           'triple-validated elite candidates (docking + ADMET + multi-target selectivity '
+           'concordant; Phase 8) across all 7 productive targets, illustrating broad '
+           'polypharmacology.')
 
     h(doc, 'ADMET and safety profiling', level=2)
     para(doc,
