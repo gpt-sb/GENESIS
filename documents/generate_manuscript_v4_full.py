@@ -455,7 +455,8 @@ def build():
         f'assertion.)')
     figure(doc, 'Fig8_Repurposing_Waterfall.png',
            'Figure 5. Top-10 drug repurposing candidates by recommendation weight, with clinical '
-           'phase annotated; EGFR/HER-family kinase inhibitors dominate the top ranks.')
+           'phase annotated; EGFR/HER-family kinase inhibitors dominate the top 5, while the '
+           'remainder of the top-10 span other mechanisms (CDK4/6, tubulin, AKT, antifolate).')
 
     h(doc, 'Structure-based molecular docking', level=2)
     t8 = P7['targets_confirmed_8']
