@@ -425,8 +425,10 @@ def build():
         f'{P4["safety_summary"]["pass"]:,}/{P4["n_total_molecules_loaded"]:,} = '
         f'{P4["safety_summary"]["pass_rate_pct"]}% PASS. Root-cause analysis attributes the limiting '
         f'factor to a persistent aniline toxicophore alert, flagged in {AN["n_flagged"]:,}/{AN["n_total"]:,} '
-        f'({AN["pct"]}%) of generated molecules: the training corpus\u2019 EGFR-target skew (EGFR is the '
-        f'single largest represented target among OSCC-active training compounds) biases de novo '
+        f'({AN["pct"]}%) of generated molecules: the training corpus\u2019 EGFR-target skew (EGFR '
+        f'accounts for 5,065 of the 17,315 very-potent training compounds, 29.3% \u2014 by far the '
+        f'single largest represented target, nearly three times the next-most-represented target) '
+        f'biases de novo '
         f'generation toward aniline-quinazoline EGFR-inhibitor scaffolds, a chemotype family that '
         f'structurally triggers this specific alert. We report this transparently as a genuine '
         f'limitation of the current training corpus (discussed further below) rather than a pipeline '
@@ -732,6 +734,18 @@ def build():
 
     # ══════════════════════════════════════════════════════════════════════
     h(doc, 'Methods')
+    h(doc, 'Molecular embedding extraction', level=2)
+    para(doc,
+        'MolDeBERTa [4] frozen [CLS]-token embeddings (768-d) were extracted for all '
+        '715,162 unique compounds spanning the training corpus, the repurposing library, and the '
+        'cross-cancer validation set, using the non-fast tokenizer variant (`use_fast=False`; the '
+        'fast tokenizer produces a different token segmentation that degrades embedding quality for '
+        'this model), batches of 64 SMILES, and a maximum sequence length of 128 tokens (truncating '
+        'a negligible fraction of very large molecules). Embeddings are stored as a single '
+        'float16 memory-mapped array for constant-memory random access during training and '
+        'inference, avoiding the need to load the full embedding matrix into RAM at any pipeline '
+        'stage.')
+
     h(doc, 'Data curation and target selection', level=2)
     para(doc,
         '56 molecular targets with established roles in OSCC pathogenesis were identified through '
@@ -912,6 +926,12 @@ def build():
 
     h(doc, 'Generative methods', level=2)
     para(doc,
+        'All six generative architectures are trained on an identical SELFIES-encoded [20] '
+        'representation of the training-positive compounds. SMILES-to-SELFIES conversion succeeded '
+        'for 71,861 of 71,866 input compounds (99.99%); the 5 failures were hypervalent-iodine '
+        'compounds that violate SELFIES\u2019 semantic-validity constraints and were excluded, not '
+        'silently corrected.')
+    para(doc,
         'The unconditional VAE optimises the standard evidence lower bound with cyclical KL '
         'annealing:')
     equation(doc, f'L_VAE = \u2212E[log p_\u03b8(x|z)] + {BETA}(t)\u00b7D_KL(q_\u03c6(z|x) \u2016 N(0,I))', 'Eq. 5')
@@ -942,6 +962,39 @@ def build():
         'MOSES-compatible metrics (validity, uniqueness, novelty, internal diversity) follow '
         '[21]; QED [23] and synthetic accessibility (SA) '
         '[24] use their standard published formulations.')
+
+    h(doc, 'Bioactivity profiling of generated molecules', level=2)
+    para(doc,
+        'Cross-method consensus compounds are identified in two tiers: exact matches (the identical '
+        'canonical SMILES produced by \u2265 2 of the six methods) and near-matches (Morgan-fingerprint '
+        'Tanimoto \u2265 0.85 between molecules from \u2265 2 different methods, single-linkage clustered so '
+        'each molecule is assigned to at most one cross-method cluster). Enriched substructural '
+        'motifs are identified by decomposing the top-500 (by composite score) generated molecules '
+        'into Murcko scaffolds, retaining scaffolds occurring \u2265 3 times, and computing an '
+        'enrichment ratio for each against two reference populations already used elsewhere in the '
+        'pipeline (\u2264 2,000 very-potent training compounds and \u2264 2,000 confirmed-inactive training '
+        'compounds, both randomly subsampled for tractability):')
+    equation(doc, 'enrichment = (n_VP,scaffold / N_VP) / (n_inactive,scaffold / N_inactive)', 'Eq. M-Enrich')
+    para(doc,
+        'a ratio > 1 indicates the scaffold is over-represented among very-potent compounds '
+        'relative to confirmed inactives; scaffolds are reported as \u201cenriched\u201d at a threshold of '
+        'enrichment > 1.5 (Results, dossier compilation).')
+
+    h(doc, 'Cross-cancer transfer evaluation', level=2)
+    para(doc,
+        'The frozen OSCC PGCL checkpoint is evaluated, without any retraining or fine-tuning, on an '
+        'independently assembled lung adenocarcinoma (LUAD) compound set: ChEMBL bioactivity records '
+        'against 16 literature-curated LUAD driver/pathway targets (EGFR, ALK, KRAS, RET, MET, '
+        'ERBB2/HER2, PIK3CA, BRAF, STK11, NTRK1, NTRK2, ROS1, NF1, MTOR, AKT1), filtered to IC\u2085\u2080 '
+        '\u2264 10 \u03bcM with a valid canonical SMILES, taking the most potent (maximum pChEMBL, direct or '
+        'IC\u2085\u2080-derived) record per compound. Each compound is scored by cosine similarity to the '
+        'same OSCC very-potent centroid (VP centroid equation, above) used throughout the rest of '
+        'this study \u2014 no LUAD-specific centroid or retraining step is introduced. The ECFP4 '
+        'comparator score is the maximum Tanimoto similarity (Morgan fingerprints, radius 2, '
+        '2048-bit) to a random sample of 500 OSCC very-potent training compounds, mirroring the '
+        'structure of the PGCL centroid comparison. Per-target subgroup analyses (Results) are '
+        'restricted to targets with \u2265 10 compounds and use the bootstrap protocol described above '
+        '(2,000 resamples).')
 
     h(doc, 'Drug repurposing composite score', level=2)
     para(doc,
@@ -990,7 +1043,16 @@ def build():
         '[33], Egan [34] rules; QED '
         '[23]) and pkCSM-style [36] ADMET endpoints (Caco-2 '
         'permeability, blood-brain-barrier penetration, plasma-protein binding, CYP inhibition, '
-        'hERG liability) were computed with RDKit. A purpose-built mucosal-irritation filter, '
+        'hERG liability) were computed with RDKit. Structural liabilities are screened by three '
+        'independent alert systems, each targeting a distinct failure mode: RDKit\u2019s built-in PAINS '
+        'catalogue [35] (assay-interference artefacts); RDKit\u2019s built-in Brenk '
+        'catalogue (metabolic/reactive-group liabilities); and a custom 10-pattern toxicophore set '
+        '(nitro-aromatics, anilines, alkyl/acyl halides, epoxides, Michael acceptors, aldehydes, '
+        'hydrazines, peroxides, thiols) targeting intrinsic covalent/mutagenic reactivity, extended '
+        'by 9 additional structural-alert patterns (azo compounds, polycyclic aromatics, and '
+        'related electrophiles). The aniline pattern in this toxicophore set is the specific alert '
+        'responsible for the EGFR-linked generative bias discussed in Results/Discussion. '
+        'Separately, a purpose-built mucosal-irritation filter, '
         'motivated by OSCC therapeutics\u2019 direct oral-mucosal exposure, screens each compound '
         'against 27 SMARTS-encoded structural alerts organised into five reactivity mechanisms '
         '(direct tissue-reactive electrophiles, reactive-oxygen-species generators, corrosive/'
@@ -1078,6 +1140,29 @@ def build():
         'training used scikit-learn [37] and XGBoost [38]; '
         'PyTorch [39] and RDKit [40] were used throughout for PGCL, '
         'generative model training, and all cheminformatics operations.')
+
+    h(doc, 'Statistics and reproducibility', level=2)
+    para(doc,
+        'This is a fully computational study with no human, animal, or clinical-trial subjects; '
+        'randomisation and blinding are not applicable. Sample sizes for evaluation were not '
+        'predetermined by power analysis but are fixed by the available bioactivity data '
+        '(49,312 positives / 643,332 tiered negatives for PGCL; 71,861 SELFIES-encoded compounds '
+        'for generative training) and by the seed counts justified above (3 seeds for the '
+        'near-convex PGCL objective, 5 for the higher-variance RL-based generative objective, '
+        'the latter minimally sufficient for Bonferroni-corrected significance at '
+        f'{ALPHA}=0.05 across 4 planned comparisons). Data exclusion criteria are reported at each '
+        'processing step where exclusions occur: 5 of 71,866 compounds (0.01%) failed SMILES\u2192'
+        'SELFIES conversion (hypervalent-iodine structures, excluded not corrected); 3 of 364 '
+        'single-target docking jobs and 0 of 350 multi-target docking jobs failed to converge '
+        '(Results). Statistical tests used throughout: two-sided Spearman rank correlation for all '
+        'potency-ordering and cross-cancer transfer estimates; one-sided Mann-Whitney U with '
+        'Bonferroni correction (4 planned comparisons) for the generative-method potency comparison '
+        '(Results); non-parametric bootstrap (2,000 resamples) for per-target subgroup confidence '
+        'intervals; and paired Cliff\u2019s '
+        f'{DELTA} as a non-parametric effect-size complement to the U statistic. Software versions '
+        '(PyTorch 2.1+, RDKit, scikit-learn, XGBoost, AutoDock Vina) and hardware are reported '
+        'below; exact package versions are pinned in the accompanying code repository\u2019s '
+        'environment file rather than restated in prose.')
 
     h(doc, 'Hardware and reproducibility', level=2)
     para(doc,
