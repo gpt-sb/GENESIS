@@ -166,9 +166,10 @@ for i, row in valid.iterrows():
     ax_b.scatter(row["parent_admet"], i, s=110, c=c,
                  edgecolors="white", linewidths=0.8, zorder=3)
 
-# Analog diamonds (green, sized by n_analogs)
+# Analog diamonds (green, sized by n_analogs) -- modest linear scaling so
+# markers stay well within row spacing and never touch neighbouring rows
 for i, row in valid.iterrows():
-    size = max(80, int(row["n_analogs"]) * 20)
+    size = 90 + int(row["n_analogs"]) * 2
     ax_b.scatter(row["mean_analog_admet"], i, s=size,
                  c="#2ca02c", marker="D",
                  edgecolors="white", linewidths=0.8, zorder=3)
@@ -183,8 +184,9 @@ for i, row in valid.iterrows():
 ax_b.set_yticks(y_pos)
 ax_b.set_yticklabels(valid["label"], fontsize=8.5)
 ax_b.set_xlabel("ADMET Score", fontsize=9.5)
+ax_b.set_ylim(-0.8, len(valid) - 0.2)
 ax_b.set_xlim(valid["parent_admet"].min() - 0.05,
-              valid["mean_analog_admet"].max() + 0.16)
+              valid["mean_analog_admet"].max() + 0.20)
 ax_b.set_title(
     "(b) ADMET Improvement per Elite Parent\n"
     "(circle = parent; diamond = mean analog; size ∝ n analogs)",
@@ -194,12 +196,12 @@ ax_b.spines[["top", "right"]].set_visible(False)
 ax_b.xaxis.grid(True, alpha=0.25, lw=0.6)
 ax_b.set_axisbelow(True)
 
-ax_b.text(0.98, 0.98,
-          f"Mean Δ ADMET = {mean_delta:+.3f}\n"
+ax_b.text(0.98, 0.96,
+          f"Mean \u0394 ADMET = {mean_delta:+.3f}\n"
           f"{n_improved}/{p9_tot} analogs improved",
           transform=ax_b.transAxes, ha="right", va="top", fontsize=8.5,
           color="#2ca02c", fontweight="bold",
-          bbox=dict(facecolor="white", alpha=0.80,
+          bbox=dict(facecolor="white", alpha=0.90,
                     edgecolor="#2ca02c", boxstyle="round,pad=0.35"))
 
 src_handles = [
