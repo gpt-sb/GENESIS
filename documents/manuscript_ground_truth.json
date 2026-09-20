@@ -110,6 +110,13 @@
         "BCE": "0.8496\u00b10.0213",
         "ECFP4_kNN": 1.0
       },
+      "vp_recall_100": {
+        "PGCL": "0.0260\u00b10.0005",
+        "RF": "0.0263\u00b10.0005",
+        "XGB": "0.0251\u00b10.0000",
+        "LR": "0.0267\u00b10.0000",
+        "source": "modeling/baselines/results/BASELINE_REPORT.md, section A4 (3-seed 42/123/456); not shown as a Table 1 row but used in Discussion to contextualise the RF/XGB regression-vs-retrieval comparison"
+      },
       "library_size": "147,618 (7,362 test positives + 140,256 test negatives), identical for every method"
     },
     "key_finding": "PGCL vs Flat SupCon (true 3-seed-vs-3-seed): PGCL wins 4/5 metrics; cliff-pair accuracy delta is within combined SD (66.38\u00b10.34% vs 66.31\u00b10.59%, PGCL nominally higher) -- the old 'central architectural insight' (89% vs 65%) does not survive. PGCL's NDCG@100 (0.941) now EXCEEDS Flat SupCon (0.931) and BCE (0.850), inverting the old claim that those baselines beat PGCL on this metric. Only ECFP4 k-NN is a genuinely deterministic (seed-invariant) baseline; FlatSupCon and BCE are both 3-seed (42/123/456) neural-network baselines, same as PGCL and RF/XGB."

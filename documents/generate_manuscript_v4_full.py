@@ -48,7 +48,7 @@ CC = LEDGER['cross_cancer_transfer']
 MOSES3 = LEDGER['generative_moses_guacamol_3seed']
 
 RHO, PM, ARROW, DEG = '\u03c1', '\u00b1', '\u2192', '\u00b0'
-TAU, LAM, BETA, DELTA = '\u03c4', '\u03bb', '\u03b2', '\u03b4'
+TAU, LAM, BETA, DELTA, ALPHA = '\u03c4', '\u03bb', '\u03b2', '\u03b4', '\u03b1'
 SUM, MB, NEQ = '\u03a3', '\u2211', '\u2260'
 
 
@@ -595,6 +595,65 @@ def build():
         'retraining, with transfer strength tracking target overlap in a mechanistically '
         'interpretable way rather than as a single derived percentage.')
     para(doc,
+        f'A counterintuitive finding from the QSAR baselines merits explicit discussion, since a '
+        f'naive reading of Table 1 could be mistaken for undermining PGCL\u2019s contribution. Random '
+        f'Forest and XGBoost, trained directly on ECFP4 fingerprints to minimise regression error '
+        f'against pChEMBL, decisively exceed PGCL on raw potency-value prediction '
+        f'({T1["potency_spearman_rho"]["RF"]} and {T1["potency_spearman_rho"]["XGB"]} vs. PGCL\u2019s '
+        f'{T1["potency_spearman_rho"]["PGCL"]}); this is expected, not surprising \u2014 a model trained '
+        f'purely to minimise regression MSE against pChEMBL will, almost by definition, better '
+        f'reproduce the Spearman rank ordering of that same quantity. Yet on the classification task '
+        f'the representation must actually support downstream (distinguishing OSCC-relevant '
+        f'compounds from same-target, wrong-context actives), PGCL leads by a substantial margin '
+        f'(target-switch AUROC {T1["target_switch_auroc"]["PGCL"]} vs. RF\u2019s '
+        f'{T1["target_switch_auroc"]["RF"]}), and on VP-compound retrieval at a fixed budget the two '
+        f'paradigms are essentially indistinguishable '
+        f'(VP Recall@100: PGCL {T1["vp_recall_100"]["PGCL"]} vs. RF {T1["vp_recall_100"]["RF"]}) \u2014 the RF '
+        f'regressor does not fail at retrieval, it simply ties PGCL rather than losing to it. This '
+        f'pattern is mechanistically coherent: RF/XGBoost are optimised regressors, learning an '
+        f'arbitrary function of ECFP4 bits that predicts pChEMBL accurately in aggregate but with no '
+        f'geometric structure connecting that function to a usable embedding space; PGCL is not '
+        f'competing to be the best pChEMBL regressor, but to provide a single continuous '
+        f'representation that simultaneously supports reward shaping for reinforcement learning, '
+        f'conditioning for generative decoders, and similarity-based screening \u2014 none of which a '
+        f'tree-ensemble regression output can natively supply.')
+    para(doc,
+        f'The six-tier negative taxonomy with curriculum scheduling (Methods, Table M2\u2013M3) is, to '
+        f'our knowledge, the first instance of graded (rather than binary or two/three-tier) '
+        f'negative mining in molecular contrastive learning. The inversely proportional tier '
+        f'margins \u2014 hardest negatives (activity-cliff inactives, clinical-failure/target-switching '
+        f'compounds) receive the tightest margins, easiest negatives the loosest \u2014 are '
+        f'geometrically motivated: forcing a large margin against a structurally near-identical '
+        f'inactive compound is often infeasible and destabilises training, whereas concentrating '
+        f'representational capacity on the pharmacologically informative near-boundary region is '
+        f'exactly where potency-graded discrimination is hardest and most valuable.')
+    para(doc,
+        f'The dual-track architecture \u2014 simultaneous drug repurposing and de novo generation from '
+        f'the same PGCL representation \u2014 creates two complementary translational timelines rather '
+        f'than a single one. The repurposing track surfaces already-approved or late-phase kinase '
+        f'inhibitors ({P6["top3"][0]["name"].title()}, {P6["top3"][1]["name"].title()}, '
+        f'{P6["top3"][2]["name"].title()}), offering a comparatively short path to clinical testing '
+        f'since their safety and pharmacokinetic profiles are already established. The generative '
+        f'track instead produces structurally novel candidates '
+        f'({P10["generated_novelty_distribution"]["novel"]["pct"]}% below Tanimoto 0.4 to any known '
+        f'compound), validated through the same downstream docking/ADMET/network-pharmacology '
+        f'evidence chain, offering a longer-horizon discovery pipeline unconstrained by existing '
+        f'chemical matter. That both tracks are produced and ranked by the same learned '
+        f'representation and the same downstream validation machinery, without any track-specific '
+        f'retraining, is itself evidence for the generality of the potency-graded contrastive '
+        f'geometry.')
+    para(doc,
+        f'Network pharmacology provides an independent, mechanism-level check on the pipeline\u2019s '
+        f'target selection: every one of the {P9A["n_compounds"]} multi-target-docked elite '
+        f'compounds engages the {P9A["top_pathway"]["name"]} pathway '
+        f'({P9A["top_pathway"]["hits"]}/{P9A["n_compounds"]}), with a mean of '
+        f'{P9A["polypharmacology"]["mean_targets_per_compound"]} targets bound per compound \u2014 '
+        f'consistent with PI3K/AKT/mTOR signalling\u2019s well-established, clinically actionable '
+        f'centrality downstream of EGFR and other receptor tyrosine kinases in OSCC. This convergence '
+        f'is a property of the underlying target panel and docking results rather than of any single '
+        f'scoring choice, and is the kind of independent, mechanism-level corroboration that a '
+        f'purely ligand-based composite score cannot supply on its own.')
+    para(doc,
         f'Generated-molecule safety PASS rates are {P4["safety_summary"]["pass_rate_pct"]}%, traced '
         f'to a persistent aniline toxicophore alert reflecting the training corpus\u2019s EGFR-target '
         f'skew. We report this candidly as a limitation of the current training data composition, '
@@ -616,27 +675,58 @@ def build():
            'representative recently published generative molecular design methods (comparator '
            'figures as self-reported by each method; not independently re-verified in this study).')
     h(doc, 'Limitations', level=2)
-    para(doc,
+    limitations = [
+        'All validation reported here is computational; no wet-laboratory potency, ADMET, or '
+        'toxicity measurement has been performed on any generated or lead-optimised compound.',
         'The generative safety-PASS finding indicates the current training corpus\u2019 target '
-        'composition biases de novo generation toward a narrow, frequently-flagged chemotype; '
-        'broadening the positive-compound target distribution is a priority for future training '
-        'iterations. Diffusion-based generation is not viable at the current training-set scale for '
-        'this chemical space. Cross-cancer transfer, while substantial for shared targets, does not '
-        'extend to cancer-specific driver oncogenes without additional target-specific data. Docking '
-        'and composite screening scores capture largely independent aspects of candidate quality and '
-        'should be interpreted as complementary, not convergent, evidence. All ranking, safety, and '
-        'ADMET assessments are computational predictions requiring experimental validation before '
-        'any translational claim.')
+        'composition biases de novo generation toward a narrow, frequently-flagged aniline-'
+        'quinazoline chemotype; broadening the positive-compound target distribution is a priority '
+        'for future training iterations.',
+        'Diffusion-based generation is not viable at the current training-set scale for this '
+        'chemical space; conditional and RL-guided VAE variants are the reliable choice below '
+        'roughly 50,000 training compounds.',
+        'Cross-cancer transfer, while substantial for shared targets (EGFR, PIK3CA), does not '
+        'extend to cancer-specific driver oncogenes (ALK, KRAS) without additional target-specific '
+        'data \u2014 the frozen representation transfers pharmacophore geometry, not disease biology '
+        'it has never seen.',
+        'Docking energy and the ligand-based composite/repurposing score capture largely '
+        'independent aspects of candidate quality (Results) and should be interpreted as '
+        'complementary, not mutually confirming, evidence streams.',
+        'The mucosal-irritation filter and all ADMET flags are rule-based (SMARTS/RDKit) heuristics '
+        'calibrated against known toxicophore chemistry, not experimentally measured irritation or '
+        'pharmacokinetic data; they are appropriately used for triage, not as a substitute for '
+        'in vitro or in vivo safety assessment.',
+        'The repurposing composite score (Eq. 11) and the Phase 10 final-ranking GENESIS score '
+        '(Eq. 12) are intentionally different formulas reflecting the evidence available at each '
+        'pipeline stage (the former predates docking data, the latter incorporates it); readers '
+        'comparing scores across these two stages directly should be aware they are not on the '
+        'same scale.',
+    ]
+    for item in limitations:
+        para(doc, item, style='List Number')
     h(doc, 'Future directions', level=2)
-    para(doc,
-        'Priority extensions include: (1) toxicophore-aware curriculum sampling or target-'
-        'composition rebalancing to address the EGFR/aniline generative bias identified above; '
-        f'(2) extending the LUAD cross-cancer transfer result ({RHO} = {CC["pgcl_rho"]}) to additional '
-        'cancers with disease-specific target panels, testing whether transfer strength continues to '
-        'track quantifiable target overlap; (3) multi-centroid scoring to improve natural-product and '
-        'repurposing candidate ranking beyond a single VP centroid, capturing target-specific rather '
-        'than global potency proximity; (4) wet-lab validation of the Tier-1 elite candidates '
-        'identified here, prioritising the triple-validated (docking + ADMET + selectivity) subset.')
+    para(doc, 'Priority extensions include:')
+    future_directions = [
+        'toxicophore-aware curriculum sampling or target-composition rebalancing to address the '
+        'EGFR/aniline generative bias identified above;',
+        f'extending the LUAD cross-cancer transfer result ({RHO} = {CC["pgcl_rho"]}) to additional '
+        'cancers with disease-specific target panels, testing whether transfer strength continues '
+        'to track quantifiable target overlap;',
+        'multi-centroid scoring to improve natural-product and repurposing candidate ranking '
+        'beyond a single VP centroid, capturing target-specific rather than global potency '
+        'proximity;',
+        'wet-laboratory validation of the Tier-1 elite candidates identified here in OSCC '
+        'cell-line models, prioritising the triple-validated (docking + ADMET + selectivity) '
+        'subset;',
+        'integration of structure-aware protein representations (e.g. ESM-2-style protein '
+        'language models) to condition generation directly on target pocket geometry rather than '
+        'solely on the ligand-side PGCL signal;',
+        'a true bootstrap recomputation of the approximate normal-theory confidence intervals '
+        'reported in the 5-seed generative evaluation (\u00a714.4 caveat, Algorithm_Design.md), for '
+        'full statistical rigor beyond what this manuscript currently claims.',
+    ]
+    for item in future_directions:
+        para(doc, item, style='List Number')
 
     # ══════════════════════════════════════════════════════════════════════
     h(doc, 'Methods')
@@ -744,6 +834,53 @@ def build():
         'early-stopping patience criterion), and every downstream phase of this pipeline was '
         'executed after that correction.')
 
+    h(doc, 'Comparative baseline training configuration', level=2)
+    para(doc,
+        'Flat SupCon and the BCE classifier share PGCL’s encoder architecture (768→512→256→128, '
+        'LayerNorm/GELU/Dropout, L2-normalised output) and training protocol (AdamW, cosine-'
+        'annealed learning rate 3×10⁻⁴, batch size 512 with 128 positive + 384 negative per step, '
+        'up to 40 epochs, patience 7 epochs after a minimum of 25), differing only in their '
+        'objective: Flat SupCon replaces the ordinal pair-weight matrix (Table M1) with uniform '
+        'weights (w_ip=1.0 for all same-class-or-not positive pairs), and the BCE classifier '
+        'replaces the three-component PGCL loss entirely with binary cross-entropy on a '
+        'very-potent-vs-all label using the same encoder plus a linear classification head. Both '
+        'were retrained and evaluated across the same three seeds (42, 123, 456) as PGCL, on the '
+        'identical held-out test pool, so that Table 1’s reported ±SD values are genuinely '
+        'comparable across all three methods (Table 1 caption). Random Forest (200 trees, '
+        'scikit-learn [37] default max depth) and XGBoost (300 trees, max depth 6, '
+        'learning rate 0.05) [38] were trained on 2048-bit ECFP4 fingerprints '
+        '[3] under the same three-seed protocol; Logistic Regression (L2 penalty, '
+        'C=1.0) was trained once (seed-invariant by construction of its convex objective). ECFP4 '
+        'k-nearest-neighbour retrieval requires no training and is therefore deterministic, the '
+        'sole such baseline in Table 1.')
+
+    h(doc, 'Multi-seed validation rationale', level=2)
+    para(doc,
+        f'The number of seeds differs between pipeline stages by design, not convenience. PGCL '
+        f'training (Phase 2) is evaluated across three seeds (42, 123, 456): the ordinal '
+        f'contrastive objective is a comparatively well-behaved, near-convex optimisation over a '
+        f'fixed 768-d embedding space, and empirically shows low seed-to-seed variance '
+        f'(Spearman {RHO} coefficient of variation {PGCL["global_spearman_rho"]["std"]/PGCL["global_spearman_rho"]["mean"]*100:.1f}%, '
+        f'Table 1). Three seeds are sufficient to establish this stability and are held fixed as '
+        f'the frozen input to every downstream phase; re-running Phase 2 at additional seeds would '
+        f'require repeating all six generative architectures’ training for each additional seed, a '
+        f'combinatorial cost with limited expected benefit given the demonstrated low variance. '
+        f'Generative evaluation (Phase 3), by contrast, uses five seeds (42, 123, 456, 789, 1337): '
+        f'REINFORCE-based policy-gradient training over a discrete SELFIES action space is '
+        f'substantially higher-variance, as the generative-method comparison itself demonstrates '
+        f'(Table 2 potency values span from {GEN["methods"]["vae"]["oscc_potency"]} for VAE, the '
+        f'most stable method in absolute terms, to {GEN["methods"]["cvae"]["oscc_potency"]} for '
+        f'cVAE, whose disproportionately large SD reflects a single outlier seed discussed in '
+        f'Results). Five seeds were the minimum needed to (a) support a one-sided '
+        f'Mann-Whitney U test with Bonferroni correction across the four planned comparisons at '
+        f'conventional {ALPHA}=0.05 (the smallest achievable exact p-value at n=5 vs. n=5 with complete '
+        f'rank separation is 1/C(10,5)=1/252≈0.004, comfortably below {ALPHA}/4=0.0125), and (b) '
+        f'characterise per-seed variability honestly rather than risk over-interpreting a smaller '
+        f'sample — a concern directly motivated by this project’s own experience correcting an '
+        f'earlier, 3-seed generative evaluation whose apparent stability partially reflected '
+        f'incomplete seed coverage rather than a genuine property of the underlying method '
+        f'(Table 2 legend; Results).')
+
     h(doc, 'Evaluation battery and formal metric definitions', level=2)
     para(doc,
         'PGCL and all baselines are evaluated on held-out, scaffold-novel test positives using: '
@@ -805,11 +942,133 @@ def build():
         '[24] use their standard published formulations.')
 
     h(doc, 'Drug repurposing composite score', level=2)
-    para(doc, 'The GENESIS score integrating all downstream evidence streams (docking, ADMET, '
-               'potency, QED, multi-target selectivity, clinical evidence, SA, novelty) applies an '
-               'evidence-completeness penalty so that compounds missing scoring components are not '
-               'inflated relative to fully-scored compounds:')
-    equation(doc, f'S_GENESIS = ({SUM}_i w_i\u00b7s_i / {SUM}_i w_i) \u00d7 sqrt(n_available/8)', 'Eq. 11')
+    para(doc,
+        f'The {P6["n_total_compounds"]:,}-compound repurposing library (CompoundList: ChEMBL and '
+        'TTD clinical-stage compounds, independent of and non-overlapping with PGCL training data) '
+        'is ranked by an 8-component recommendation weight computed before any docking data is '
+        'available for these compounds:')
+    equation(doc,
+        'W_rep = 0.30\u00b7s_comp + 0.20\u00b7s_safe + 0.15\u00b7s_tgt + 0.10\u00b7s_SA + 0.05\u00b7s_cons '
+        '+ 0.05\u00b7s_dock + 0.10\u00b7s_clin + 0.05\u00b7s_smarts', 'Eq. 11')
+    para(doc,
+        's_comp is cosine similarity to the per-target very-potent centroid (the same PGCL '
+        'representation used for generative reward and conditioning); s_safe is a geometric-mean '
+        'safety score (PAINS/Brenk/toxicophore alerts, one severe alert dominates); s_tgt is a '
+        'per-target centroid-confidence term; s_SA is normalised synthetic accessibility; s_cons '
+        'and s_dock are placeholder terms (uniform 0.5 and 0 respectively, reserved for future '
+        'multi-method consensus and Phase 7 docking data, which post-dates this screening step and '
+        'is therefore unavailable at scoring time); s_clin is clinical-phase evidence '
+        '(approved=1.0, decreasing with earlier phase); and s_smarts flags membership in a '
+        'cross-study-enriched substructure shared with independently generated molecules. Unlike '
+        'the Phase 10 final-ranking score (Eq. 12), all eight components are always defined for '
+        'every compound in this library, so no evidence-completeness penalty is required.')
+
+    h(doc, 'Structure-based molecular docking', level=2)
+    para(doc,
+        'The top 200 generated and top 200 repurposed candidates by composite score were docked '
+        'against eight OSCC-relevant crystal structures (AKT1 3CQW, EGFR 4HJO, FGFR1 4V04, MDM2 '
+        '4HG7, MTOR 4DRH, PIK3CA 4JPS, PTGS2 3LN1, STAT3 6NUQ) using AutoDock Vina '
+        '[30,31] (exhaustiveness=16, 9 output poses, seed=42). Receptors were '
+        'converted from the deposited PDB coordinate file to a rigid-body PDBQT representation '
+        'using an AutoDock4 atom-type mapping restricted to standard amino-acid heavy and polar '
+        'hydrogen atoms (hetero-groups and crystallographic waters are excluded by construction, '
+        'since they carry no recognised residue/atom-name mapping). Ligands were embedded in 3D '
+        'with explicit hydrogens (RDKit [40]) and parameterised for docking with '
+        'Meeko. Search-box centres and edge lengths (22\u201326 \u00c5 per side, target-dependent) were '
+        'fixed at each target\u2019s co-crystallised-ligand centroid, following manual inspection of '
+        'the deposited structure; the same eight fixed boxes were reused, unchanged, for the '
+        'follow-up multi-target docking stage (below). A second, independent multi-target docking '
+        'stage re-docked the top 50 single-target hits against seven of the eight targets (STAT3 '
+        'excluded for a 0% single-target hit rate) to build the polypharmacology profile used by '
+        'network pharmacology and final ranking.')
+
+    h(doc, 'ADMET profiling and mucosal-safety filter', level=2)
+    para(doc,
+        'Physicochemical properties (Lipinski [32], Veber '
+        '[33], Egan [34] rules; QED '
+        '[23]) and pkCSM-style [36] ADMET endpoints (Caco-2 '
+        'permeability, blood-brain-barrier penetration, plasma-protein binding, CYP inhibition, '
+        'hERG liability) were computed with RDKit. A purpose-built mucosal-irritation filter, '
+        'motivated by OSCC therapeutics\u2019 direct oral-mucosal exposure, screens each compound '
+        'against 27 SMARTS-encoded structural alerts organised into five reactivity mechanisms '
+        '(direct tissue-reactive electrophiles, reactive-oxygen-species generators, corrosive/'
+        'extreme-pH groups, membrane-disrupting amphiphiles, and covalent protein/keratin-reactive '
+        'warheads), each assigned a severity score; a compound is classified HIGH risk if its '
+        'maximum alert severity is \u2265 3 or its summed severity is \u2265 5, MODERATE if maximum '
+        'severity \u2265 2 or summed severity \u2265 3 (or amphiphilic-risk flagged), LOW if any lesser '
+        'alert or extreme-pH risk fires, and SAFE otherwise. The overall ADMET score combines six '
+        'normalised sub-scores by weighted geometric mean:')
+    equation(doc,
+        'ADMET_score = exp( \u03a3_i w_i\u00b7ln(s_i) ),  '
+        'w = [druglike:0.20, absorption:0.15, safety:0.20, mucosal:0.20, cardiac:0.10, metabolic:0.15]',
+        'Eq. M-ADMET')
+    para(doc,
+        'the mucosal sub-score receives an elevated weight (0.20, tied with structural-alert '
+        'safety) reflecting the oral-delivery context specific to OSCC; the geometric mean means '
+        'a single catastrophically poor sub-score dominates the composite regardless of strong '
+        'performance elsewhere. Compounds are flagged PASS if ADMET_score \u2265 0.5 and mucosal risk '
+        '\u2208 {SAFE, LOW} and zero PAINS alerts and non-High hERG risk; CAUTION if ADMET_score \u2265 0.3 '
+        'and mucosal risk \u2260 HIGH and at most one PAINS alert; and FAIL otherwise.')
+
+    h(doc, 'Network pharmacology', level=2)
+    para(doc,
+        'Polypharmacology among the multi-target-docked elite compounds is represented as a '
+        'weighted bipartite graph G = (C \u222a T, E), compounds C and targets T, with an edge for '
+        'every compound-target pair reaching \u2264 \u22127.0 kcal/mol, weighted by |\u0394G|. A '
+        'complementary target\u2013target network G_TT = (T, E_TT) captures shared-binder overlap via '
+        'the Jaccard index:')
+    equation(doc, 'J(t\u2081,t\u2082) = |B_t\u2081 \u2229 B_t\u2082| / |B_t\u2081 \u222a B_t\u2082|', 'Eq. M-Jaccard')
+    para(doc,
+        'where B_t is the set of compounds binding target t at the same threshold. Each target was '
+        'manually mapped to KEGG/Reactome pathways relevant to OSCC biology (PI3K/AKT/mTOR axis; '
+        'RTK/MAPK cascade; cell-cycle/apoptosis; inflammation/tumour microenvironment), yielding a '
+        'compound-level polypharmacology score (fraction of mapped pathway categories engaged) '
+        'used both descriptively and as an input to Eq. 12.')
+
+    h(doc, 'Scaffold-constrained lead optimization', level=2)
+    para(doc,
+        'Rather than sampling latent vectors from the CRAVE prior as in de novo generation, the '
+        'triple-validated elite parents are perturbed locally in PGCL latent space:')
+    equation(doc, 'z_analog ~ N(z_elite, ' + '\u03c3' + '\u00b2I),  ' + '\u03c3' + ' \u2208 {0.3, 0.5, 0.8}', 'Eq. M-LeadOpt')
+    para(doc,
+        'at three radii spanning conservative to exploratory structural variation, decoded through '
+        'the CRAVE decoder (SELFIES tokens \u2192 SMILES) and passed through a filtering cascade: RDKit '
+        'validity; Morgan-fingerprint (radius 2, 2048-bit) Tanimoto similarity to parent \u2265 0.30; '
+        'molecular weight \u2264 700 Da; canonical-SMILES deduplication; ADMET re-scoring (above); and '
+        'a quality gate requiring PASS or CAUTION flag with QED \u2265 0.4 and SA \u2264 5.5. This produces '
+        'analogs localised around each elite parent\u2019s position in the learned chemical space, '
+        'preserving inherited potency while sampling property variation.')
+
+    h(doc, 'Nearest known analog analysis and final ranking', level=2)
+    para(doc,
+        'Every generated compound is contextualised against a 71,965-compound reference library '
+        '(training positives, the full curated ChEMBL/OSCC dataset, and repurposing-screen '
+        'compounds with clinical metadata) by bulk Tanimoto search '
+        '(Morgan fingerprints, radius 2, 2048-bit) for its top-3 nearest known analogs, with '
+        'maximum-common-substructure coverage computed for the single nearest analog '
+        '(RDKit rdFMCS, element-only atom matching, bond-order-sensitive, 1\u20132 s timeout per pair). '
+        'Compounds are classified novel (maximum Tanimoto < 0.4), scaffold-hop (0.4\u20130.7), or '
+        'close-analog (\u2265 0.7). All pipeline evidence streams (repurposing screen, single- and '
+        'multi-target docking, ADMET, network pharmacology, lead-optimisation analogs) are merged '
+        'on compound identifier and canonical SMILES into a single ranked table, scored by a final '
+        'GENESIS score structurally distinct from the Phase 6 repurposing score above \u2014 it '
+        'incorporates docking and multi-target selectivity data unavailable at the repurposing '
+        'stage, drops the SMARTS-enrichment and consensus placeholder terms, and reintroduces the '
+        'evidence-completeness penalty (Eq. 11 of the original repurposing scope; renumbered Eq. 12 '
+        'here to avoid conflating the two distinct formulas):')
+    equation(doc,
+        'S_GENESIS = ({SUM}_i w_i\u00b7s_i / {SUM}_i w_i) \u00d7 sqrt(n_available/8),  '
+        'w = [dock:0.25, ADMET:0.20, potency:0.15, QED:0.10, multi-target:0.10, clinical:0.10, SA:0.05, novelty:0.05]'.format(SUM=SUM),
+        'Eq. 12')
+    para(doc,
+        'where missing components (e.g. a compound never docked) contribute 0 to the numerator '
+        'while retaining their weight in the denominator, n_available counts the components with '
+        'non-missing data for that compound, and the square-root scaling penalises partial '
+        'evidence without annihilating compounds that are, for instance, docking-validated but not '
+        'yet network-pharmacology-profiled. Compounds are additionally stratified into validation '
+        'tiers by data completeness (Tier-1: docking + ADMET + multi-target data all present; '
+        'Tier-3: either docking or ADMET; Tier-4: prediction-only) for transparent reporting '
+        'alongside the continuous score.')
     para(doc,
         'ADMET predictions (physicochemical, Caco-2/BBB/hERG risk) follow pkCSM-style modelling '
         '[36]; structural filters follow Lipinski [32], Veber '
@@ -817,6 +1076,21 @@ def build():
         'training used scikit-learn [37] and XGBoost [38]; '
         'PyTorch [39] and RDKit [40] were used throughout for PGCL, '
         'generative model training, and all cheminformatics operations.')
+
+    h(doc, 'Hardware and reproducibility', level=2)
+    para(doc,
+        'All experiments were run on a single Apple M3 workstation (unified memory, PyTorch 2.1+ '
+        'with the MPS backend enforcing float32, since MPS does not support float16 matrix '
+        'multiplication at the time of this study) \u2014 no dedicated compute cluster or discrete GPU '
+        'was used at any pipeline stage. PGCL training completes in under 90 minutes per seed; '
+        'the six generative architectures together require several hours per seed, dominated by '
+        'the VAE-family and CGLF methods (RL-VAE, Diffusion, and CRAVE converge substantially '
+        'faster); single- and multi-target docking, ADMET profiling, network pharmacology, lead '
+        'optimisation, and final ranking each complete in minutes. Exact per-phase wall-clock '
+        'figures vary run-to-run with input compound counts and are provided, phase-by-phase, in '
+        'the accompanying data ledger rather than restated here as a single figure, since (unlike '
+        'the algorithmic and statistical methodology above) they are not claims requiring '
+        'independent verification.')
 
     h(doc, 'Acknowledgements')
     para(doc, 'The author thanks the open-source cheminformatics and machine-learning communities '
