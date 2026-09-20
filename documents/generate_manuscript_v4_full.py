@@ -206,8 +206,10 @@ def build():
         'Natural products have historically yielded some of the most successful anticancer '
         'agents (vincristine, paclitaxel, camptothecin), and phytochemicals such as '
         'resveratrol, berberine, and quercetin have demonstrated in vitro activity against '
-        'OSCC cell lines, motivating natural-product-informed screening as an orthogonal '
-        'validation signal alongside purely data-driven generation.')
+        'OSCC cell lines \u2014 a reminder that pharmacologically relevant chemical space extends '
+        'well beyond synthetic, patent-protected scaffolds, and part of the broader rationale '
+        'for combining repurposing screening of existing compounds with de novo generation '
+        '(Results), rather than relying on generation alone.')
     para(doc,
         'We present GENESIS, an 11-phase (Phase 0\u201310) end-to-end framework centred on '
         'Potency-Graded Contrastive Learning (PGCL). PGCL introduces three innovations to '
@@ -219,7 +221,15 @@ def build():
         'simultaneously as a reinforcement-learning reward signal, a conditioning input for '
         'generative decoders, and a similarity metric for repurposing screening \u2014 enabling, to '
         'our knowledge, the first same-dataset, same-representation comparison of six '
-        'generative architectures for a single disease indication. This manuscript reports '
+        'generative architectures for a single disease indication. We further show that this '
+        'frozen representation, learned entirely from OSCC data, transfers substantially to a '
+        'second cancer (lung adenocarcinoma) without any cancer-specific retraining, indicating '
+        'the learned geometry captures pan-cancer pharmacophore structure rather than an '
+        'OSCC-specific artefact. Beyond representation learning and generation, PGCL anchors a '
+        'complete translational pipeline \u2014 structure-based docking, ADMET and OSCC-specific '
+        'mucosal-safety profiling, network pharmacology, and scaffold-constrained lead '
+        'optimisation \u2014 that integrates repurposing and de novo candidates into a single ranked, '
+        'evidence-graded list of prioritised compounds (Results). This manuscript reports '
         'results from a complete, freshly executed run of the full pipeline (Methods), with '
         'every numeric claim traced to a specific result file and independently cross-checked '
         'by an automated verifier against that source.')
@@ -662,8 +672,10 @@ def build():
         f'to a persistent aniline toxicophore alert reflecting the training corpus\u2019s EGFR-target '
         f'skew. We report this candidly as a limitation of the current training data composition, '
         f'not a pipeline defect: EGFR compounds are systematically over-represented among OSCC '
-        f'training positives (a consequence of EGFR\u2019s clinical prominence and correspondingly '
-        f'larger ChEMBL bioactivity footprint relative to other OSCC targets), and the generative '
+        f'training positives (5,065 of 17,315 very-potent training compounds, 29.3% \u2014 nearly '
+        f'three times the next-most-represented target \u2014 a consequence of EGFR\u2019s clinical '
+        f'prominence and correspondingly larger ChEMBL bioactivity footprint relative to other '
+        f'OSCC targets), and the generative '
         f'methods faithfully learn and reproduce this skew. This motivates toxicophore-aware '
         f'negative sampling or generation-time filtering as a concrete next step, discussed below.')
     para(doc,
