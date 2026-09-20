@@ -114,7 +114,7 @@ def make_figure():
 
     for idx, cpd in enumerate(COMPOUNDS):
         r, c = divmod(idx, 3)
-        inner = gs[r, c].subgridspec(3, 1, height_ratios=[3.2, 0.45, 2.5], hspace=0.0)
+        inner = gs[r, c].subgridspec(3, 1, height_ratios=[3.0, 0.75, 2.4], hspace=0.0)
 
         # Structure panel
         ax_s = fig.add_subplot(inner[0])
@@ -134,13 +134,12 @@ def make_figure():
         ax_i = fig.add_subplot(inner[1])
         ax_i.set_visible(False)
         pos = ax_s.get_position()
-        info = (f"Score: {cpd['score']:.4f}  |  MW: {cpd['mw']:.0f} Da  |  "
-                f"QED: {cpd['qed']:.3f}  |  SA: {cpd['sa']:.2f}  |  "
-                f"Best DeltaG: {cpd['best_dg']:.1f} ({cpd['best_target']})  |  "
-                f"{cpd['n_targets']}/7 targets  |  {cpd['novelty']}  |  {cpd['method']}")
+        info = (f"Score {cpd['score']:.3f} | MW {cpd['mw']:.0f} | QED {cpd['qed']:.2f} | "
+                f"SA {cpd['sa']:.2f} | \u0394G {cpd['best_dg']:.1f} ({cpd['best_target']})\n"
+                f"{cpd['n_targets']}/7 targets | {cpd['novelty']} | {cpd['method']}")
         fig.text(pos.x0 + pos.width/2, pos.y0 - 0.003, info,
-                 ha="center", va="top", fontsize=6.8, color="#111",
-                 fontfamily="monospace",
+                 ha="center", va="top", fontsize=6.3, color="#111",
+                 fontfamily="monospace", linespacing=1.5,
                  bbox=dict(boxstyle="round,pad=0.28", facecolor=ac, alpha=0.10,
                            edgecolor=ac, lw=0.9))
 
