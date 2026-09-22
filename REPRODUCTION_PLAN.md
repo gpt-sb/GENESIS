@@ -37,7 +37,7 @@ pip install torch transformers selfies rdkit scikit-learn scipy pandas numpy pyt
 
 | File | Location | Description |
 |------|----------|-------------|
-| `All_Compounds_Unq_Std.tsv` | `data/` | Master dataset — 72,162 compounds, 47 columns. GENESIS_NP IDs used in place of original NPACT IDs. |
+| `All_Compounds_Unq_Std.tsv` | `data/` | Master dataset — 72,162 compounds, 47 columns. |
 | `tier1_confirmed_inactives.tsv` | `negatives/` | T1 negatives (20,237 rows) |
 | `tier2_other_cancer_actives.tsv` | `negatives/` | T2 negatives (41,909 rows) |
 | `tier3a_activity_cliff_pairs.tsv` | `negatives/` | T3A negatives (15,471 rows) |
@@ -46,7 +46,7 @@ pip install torch transformers selfies rdkit scikit-learn scipy pandas numpy pyt
 | `tier4_background.tsv` | `negatives/` | T4 negatives (100,000 rows) |
 | Crystal structures (PDB) | `docking/structures/` | 8 OSCC target PDB files (see §8) |
 
-> **Note on GENESIS_NP IDs**: 255 natural product compounds carry internal IDs (`GENESIS_NP_00001` … `GENESIS_NP_00255`). The mapping to their original source identifiers is in `data/npact_to_genesis_id_mapping.tsv`. All compounds are traceable via their PubChem CID in `All_Compounds_Unq_Std.tsv`.
+> **Note on GENESIS_NP IDs**: 255 natural product compounds carry internal IDs (`GENESIS_NP_00001` … `GENESIS_NP_00255`). All compounds are traceable via their PubChem CID in `All_Compounds_Unq_Std.tsv`.
 
 ---
 
