@@ -50,6 +50,8 @@ GENESIS/
 ├── final_ranking/         Integrated GENESIS-score ranking (Phase 10)
 ├── negatives/             6-tier negative taxonomy TSVs
 ├── documents/             Manuscript ground-truth ledger, verifiers, figures
+├── results/               ChEMBL extraction helper for cross-cancer transfer (§ below)
+├── test_reproducibility.py  Environment/file-layout sanity check (run first)
 ├── REPRODUCTION_PLAN.md   Step-by-step reproduction guide
 ├── Algorithm_Design.md    PGCL algorithm reference
 ├── requirements.txt
@@ -68,6 +70,11 @@ GENESIS/
 git clone https://github.com/gpt-sb/GENESIS.git
 cd GENESIS
 pip install -r requirements.txt
+```
+
+Verify your environment and file layout before starting:
+```bash
+python test_reproducibility.py
 ```
 
 **AutoDock Vina** (required for Phase 7):

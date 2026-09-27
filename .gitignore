@@ -5,8 +5,8 @@ __pycache__/
 .DS_Store
 
 # Large generative-model checkpoints hosted on Zenodo (~325MB total, largest
-# individual file 63MB) -- see docs/ZENODO.md. The small PGCL checkpoints
-# (best.pt + 3 multiseed checkpoints, <10MB each) ARE tracked directly.
+# individual file 63MB) -- see README.md "Large Files (Zenodo)". The small
+# PGCL checkpoints (best.pt + 3 multiseed checkpoints, <10MB each) ARE tracked directly.
 generative/checkpoints/*.pt
 
 # Pre-computed MolDeBERTa embeddings hosted on Zenodo (~1.4GB, not tracked)
