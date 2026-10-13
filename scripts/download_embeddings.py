@@ -20,7 +20,7 @@ are, however, also archived on the same Zenodo record for permanent, citable
 access independent of GitHub, since the PGCL checkpoint is the single most
 important artifact in the paper.
 
-Zenodo DOI: 10.5281/zenodo.[TBD -- fill in after the record is published]
+Zenodo DOI: 10.5281/zenodo.23340896
 
 Usage:
     python scripts/download_embeddings.py
@@ -29,12 +29,13 @@ import sys
 import urllib.request
 from pathlib import Path
 
-ZENODO_DOI = "10.5281/zenodo.[TBD]"
-ZENODO_BASE = "https://zenodo.org/record/[TBD]/files"
+ZENODO_DOI = "10.5281/zenodo.23340896"
+ZENODO_BASE = "https://zenodo.org/records/23340896/files"
 
 FILES = {
     "embeddings/compound_embeddings.mmap": f"{ZENODO_BASE}/compound_embeddings.mmap",
     "embeddings/compound_ids.npy": f"{ZENODO_BASE}/compound_ids.npy",
+    "embeddings/meta.json": f"{ZENODO_BASE}/meta.json",
     "embeddings/progress.json": f"{ZENODO_BASE}/progress.json",
     "generative/checkpoints/best_vae.pt": f"{ZENODO_BASE}/best_vae.pt",
     "generative/checkpoints/best_cvae.pt": f"{ZENODO_BASE}/best_cvae.pt",
