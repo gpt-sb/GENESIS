@@ -90,7 +90,7 @@ brew install autodock-vina
 
 Pre-computed MolDeBERTa embeddings and trained model checkpoints are archived on Zenodo for permanent, citable, DOI-backed access:
 
-> **DOI**: [10.5281/zenodo.23340896](https://doi.org/10.5281/zenodo.23340896)
+> **DOI**: [10.5281/zenodo.23393588](https://doi.org/10.5281/zenodo.23393588)
 
 ```bash
 python scripts/download_embeddings.py

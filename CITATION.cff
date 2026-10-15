@@ -10,7 +10,7 @@ repository-code: "https://github.com/gpt-sb/GENESIS"
 version: 1.0.0
 identifiers:
   - type: doi
-    value: "10.5281/zenodo.23340896"
+    value: "10.5281/zenodo.23393588"
     description: "Zenodo archive of pre-computed embeddings and model checkpoints"
 keywords:
   - drug discovery
