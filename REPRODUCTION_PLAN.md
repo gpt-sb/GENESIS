@@ -44,7 +44,7 @@ pip install torch transformers selfies rdkit scikit-learn scipy pandas numpy pyt
 | `tier3b_scaffold_matched.tsv` | `negatives/` | T3B negatives (478,786 rows) |
 | `tier3c_target_switching.tsv` | `negatives/` | T3C negatives (2,363 rows) |
 | `tier4_background.tsv` | `negatives/` | T4 negatives (100,000 rows) |
-| Crystal structures (PDB) | `docking/structures/` | 8 OSCC target PDB files (see §8) |
+| Crystal structures (PDB) | `docking/receptors/` | 8 OSCC target PDB files (see §8) |
 
 > **Note on GENESIS_NP IDs**: 255 natural product compounds carry internal IDs (`GENESIS_NP_00001` … `GENESIS_NP_00255`). All compounds are traceable via their PubChem CID in `All_Compounds_Unq_Std.tsv`.
 
@@ -172,20 +172,17 @@ python modeling/baselines/run_all_baselines.py
 # Ablation study (7 configurations × 3 seeds)
 python modeling/run_ablations.py
 
-# Virtual screening enrichment (PGCL vs ECFP4)
-python scripts/virtual_screening_enrichment.py
+# Virtual screening enrichment (PGCL vs ECFP4): EF@K, BEDROC
+python scripts/virtual_screening_enrichment.py --device mps
 
 # Cross-cancer transfer: OSCC → LUAD (requires ChEMBL MySQL at localhost)
-python modeling/baselines/cross_cancer_transfer.py \
-    --source oscc \
-    --target luad \
-    --pgcl-checkpoint modeling/checkpoints/best_pgcl_seed42.pt
+python modeling/baselines/cross_cancer_transfer_full_coverage.py --device mps
 ```
 
 **Key results**:
 - Ablation: removing PotencyLoss drops ρ by 18.1%; removing TierMarginRanking drops NDCG@100 by 10.8%
 - BEDROC: PGCL 2.52 vs ECFP4 1.90
-- Cross-cancer: OSCC→LUAD Spearman ρ = 0.502 (n=29,675 LUAD compounds, 16 targets)
+- Cross-cancer: OSCC→LUAD Spearman ρ = 0.207 pooled (n=52,373 LUAD compounds, 14 assessable targets, 100% coverage; superseded partial-coverage run at ρ=0.502/n=29,675 kept for audit trail in modeling/baselines/results/cross_cancer/)
 
 > The cross-cancer transfer requires a local ChEMBL 36 MySQL instance (`localhost`, user=root). Skip if unavailable; result is already in `modeling/baselines/results/cross_cancer/`.
 

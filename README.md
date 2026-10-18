@@ -27,7 +27,7 @@ The pipeline spans 11 phases, reproducible on a single consumer machine (Apple M
 | 9a/9b | Network pharmacology + scaffold-constrained lead optimization | ~2 min |
 | 10 | Integrated final ranking | ~2 min |
 
-**Key results** (this run, seed 42 unless noted): Spearman ρ = 0.555 ± 0.003 for potency ordering (3-seed); frozen model transfers to lung adenocarcinoma without retraining (ρ = 0.502, n = 29,675); 5,416 unique generated molecules; 316 recommended compounds, 46 Tier-1 fully-validated candidates, 13 triple-validated elite structures; 23,308 repurposing candidates screened.
+**Key results** (this run, seed 42 unless noted): Spearman ρ = 0.555 ± 0.003 for potency ordering (3-seed); frozen model transfers to lung adenocarcinoma without retraining (full-coverage pooled ρ = 0.207, n = 52,373 across 14 assessable targets, strongly along the PI3K/AKT/mTOR axis); 5,416 unique generated molecules; 316 recommended compounds, 46 Tier-1 fully-validated candidates, 13 triple-validated elite structures; 23,308 repurposing candidates screened.
 
 ---
 
@@ -35,13 +35,14 @@ The pipeline spans 11 phases, reproducible on a single consumer machine (Apple M
 
 ```
 GENESIS/
+├── data/                  Master compound dataset (All_Compounds_Unq_Std.tsv, required input)
 ├── modeling/              PGCL training, evaluation, baselines, ablations (Phase 1-2, 5)
 │   ├── checkpoints/       best.pt -- canonical PGCL checkpoint (seed 42, tracked in git)
 │   ├── validation/        Multi-seed checkpoints/logs, ablation results
 │   └── baselines/         Flat SupCon, BCE, ECFP4 k-NN, QSAR, cross-cancer transfer
 ├── generative/            VAE, cVAE, Diffusion, RL-VAE, CGLF, CRAVE (Phase 3)
 │   └── checkpoints/       7 trained model files (~325MB total, via Zenodo -- see below)
-├── scripts/               Embedding extraction, figure generation, Zenodo downloader
+├── scripts/               Embedding extraction, virtual screening enrichment (EF@K/BEDROC), Zenodo downloader
 ├── repurposing/           Drug repurposing screening (Phase 6)
 ├── docking/               AutoDock Vina wrappers + receptor structures (Phase 7)
 ├── admet/                 ADMET profiling with OSCC mucosal-safety filter (Phase 8)
@@ -108,7 +109,6 @@ Every numeric claim in the manuscript is backed by a single, version-controlled 
 
 - **`documents/manuscript_ground_truth.json`** — every reported number, with its exact source result file.
 - **`documents/verify_manuscript_numbers.py`** — re-derives each ledger entry directly from the underlying raw result files (independent of the ledger itself).
-- **`documents/verify_manuscript_v3_against_ledger.py`** — confirms the generated manuscript text matches the ledger.
 
 ```bash
 python documents/verify_manuscript_numbers.py
@@ -211,9 +211,10 @@ Two ways to inspect this result:
 
 | File | Contents |
 |---|---|
-| `modeling/baselines/results/cross_cancer/transfer_results_target_based.json` | Summary: PGCL ρ = 0.5022, ECFP4 baseline ρ = 0.3898, n = 29,675 LUAD compounds across 16 targets, per-target breakdown with bootstrap 95% CIs |
-| `modeling/baselines/results/cross_cancer/luad_target_based_scored.tsv` | Per-compound PGCL and ECFP4 scores, target label, and measured pChEMBL |
-| `modeling/baselines/results/cross_cancer/luad_target_based_raw.tsv` | Raw extracted ChEMBL records before scoring |
+| `modeling/baselines/results/cross_cancer/transfer_results_target_based_full_coverage.json` | Manuscript-reported summary: pooled PGCL ρ = 0.2069, ECFP4 baseline ρ = 0.1841, n = 52,373 LUAD compounds across 14 assessable targets (100% coverage), per-target breakdown with bootstrap 95% CIs |
+| `modeling/baselines/results/cross_cancer/luad_full_coverage_scored.tsv` | Per-compound PGCL and ECFP4 scores, target label, and measured pChEMBL, full coverage |
+| `modeling/baselines/results/cross_cancer/full_coverage_provenance.json` | Provenance: which compounds were re-embedded vs. already indexed |
+| `modeling/baselines/results/cross_cancer/transfer_results_target_based.json` | Superseded partial-coverage run (PGCL ρ = 0.5022, n = 29,675, 56.7% coverage, 4/16 targets) — kept for audit trail only, not the reported number |
 
 **Option B — regenerate from scratch (advanced, requires a local ChEMBL MySQL mirror):**
 ```bash
@@ -221,7 +222,7 @@ export CHEMBL_MYSQL_HOST=localhost
 export CHEMBL_MYSQL_USER=root
 export CHEMBL_MYSQL_PASSWORD=your_password_here
 export CHEMBL_MYSQL_DB=chembl_36
-python modeling/baselines/cross_cancer_transfer_target_based.py --device mps
+python modeling/baselines/cross_cancer_transfer_full_coverage.py --device mps
 ```
 If `CHEMBL_MYSQL_PASSWORD` is unset, the script fails fast with a clear error rather than attempting a doomed database connection. The same environment-variable pattern is used by `results/chembl_oscc_extractor_v2.py`.
 

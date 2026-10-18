@@ -36,6 +36,7 @@ def section(t):
 
 section("1. Required code files")
 for rel in [
+    "data/All_Compounds_Unq_Std.tsv",
     "modeling/model.py", "modeling/losses.py", "modeling/train.py",
     "modeling/evaluate.py", "modeling/dataset.py",
     "modeling/prepare_positives.py", "modeling/prepare_negatives.py",
@@ -43,6 +44,8 @@ for rel in [
     "generative/vae.py", "generative/crave_gen.py", "generative/run_all.py",
     "scripts/moldeberta_embedding_extract.py",
     "scripts/download_embeddings.py",
+    "scripts/virtual_screening_enrichment.py",
+    "modeling/baselines/cross_cancer_transfer_full_coverage.py",
     "docking/run_molecular_docking.py",
     "admet/run_admet_profiling.py",
     "repurposing/run_drug_repurposing.py",
