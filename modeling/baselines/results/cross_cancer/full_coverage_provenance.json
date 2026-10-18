@@ -1,0 +1,19 @@
+{
+  "checkpoint_used": "/Users/saurabhbundela/Research/GENESIS_1/GENESIS/modeling/checkpoints/best.pt",
+  "checkpoint_opened_mode": "read-only (torch.load, eval mode, no re-save)",
+  "production_mmap_opened_mode": "read-only (np.memmap mode=\"r\")",
+  "production_mmap_untouched": true,
+  "compound_index_untouched": true,
+  "original_results_file_untouched": true,
+  "moldeberta_model": "SaeedLab/MolDeBERTa-base-123M-mtr",
+  "moldeberta_config": {
+    "max_length": 128,
+    "batch_size": 64,
+    "pooling": "CLS token, identical to embedding_extract.py"
+  },
+  "new_files_written": [
+    "/Users/saurabhbundela/Research/GENESIS_1/GENESIS/modeling/baselines/results/cross_cancer/luad_missing_base_embeddings.npz",
+    "/Users/saurabhbundela/Research/GENESIS_1/GENESIS/modeling/baselines/results/cross_cancer/luad_full_coverage_scored.tsv",
+    "/Users/saurabhbundela/Research/GENESIS_1/GENESIS/modeling/baselines/results/cross_cancer/transfer_results_target_based_full_coverage.json"
+  ]
+}

@@ -1222,5 +1222,149 @@
       "crave_filtered_fcd_best": "CRAVE (filtered) has the lowest and most tightly-confirmed FCD (34.07+/-0.31) of all 7 methods.",
       "potency_diversity_tradeoff": "CRAVE/CGLF show lower IntDiv and Scaf than unconstrained VAE/cVAE baselines; this reflects the intended potency-guided narrowing of generation, not a fidelity defect (see generative_multiseed_5seed for the corresponding potency gains)."
     }
+  },
+  "cross_cancer_transfer_full_coverage": {
+    "source": "modeling/baselines/results/cross_cancer/transfer_results_target_based_full_coverage.json -- Options A+B rescore (2026-10-05): re-embedded the 43.3% of LUAD compounds absent from the production embedding index (fresh MolDeBERTa + frozen PGCL projection, independently verified 128-d L2-normalised output) and expanded per-target analysis from a 4-target subset to all 16 LUAD-relevant targets. Treated as the canonical, first-reported cross-cancer result -- supersedes cross_cancer_transfer above for all manuscript prose.",
+    "n_total": 52373,
+    "n_full_coverage": 52373,
+    "coverage_pct": 100.0,
+    "pgcl_rho": 0.2069,
+    "ecfp4_rho": 0.1841,
+    "oscc_reference": "stratified 3-seed rho = 0.555 +/- 0.003",
+    "per_target": {
+      "PIK3CA": {
+        "rho": 0.688,
+        "ci": [
+          0.676,
+          0.7
+        ],
+        "n": 9009,
+        "tier": "strong"
+      },
+      "MTOR": {
+        "rho": 0.614,
+        "ci": [
+          0.595,
+          0.633
+        ],
+        "n": 5192,
+        "tier": "strong"
+      },
+      "AKT1": {
+        "rho": 0.583,
+        "ci": [
+          0.559,
+          0.605
+        ],
+        "n": 3534,
+        "tier": "strong"
+      },
+      "EGFR": {
+        "rho": 0.561,
+        "ci": [
+          0.547,
+          0.574
+        ],
+        "n": 11886,
+        "tier": "strong"
+      },
+      "ERBB2/HER2": {
+        "rho": 0.45,
+        "ci": [
+          0.421,
+          0.48
+        ],
+        "n": 3026,
+        "tier": "strong",
+        "note": "ERBB2 and HER2 are the same gene, listed as two aliases in the source target list; identical stats, reported once"
+      },
+      "BRAF": {
+        "rho": 0.236,
+        "ci": [
+          0.213,
+          0.259
+        ],
+        "n": 6310,
+        "tier": "moderate"
+      },
+      "RET": {
+        "rho": 0.23,
+        "ci": [
+          0.2,
+          0.261
+        ],
+        "n": 4170,
+        "tier": "moderate"
+      },
+      "ALK": {
+        "rho": 0.184,
+        "ci": [
+          0.145,
+          0.223
+        ],
+        "n": 2385,
+        "tier": "moderate"
+      },
+      "ROS1": {
+        "rho": 0.166,
+        "ci": [
+          0.031,
+          0.292
+        ],
+        "n": 254,
+        "tier": "moderate"
+      },
+      "NTRK2": {
+        "rho": 0.076,
+        "ci": [
+          -0.01,
+          0.158
+        ],
+        "n": 482,
+        "tier": "weak",
+        "note": "NOT statistically significant, CI crosses 0"
+      },
+      "KRAS": {
+        "rho": 0.074,
+        "ci": [
+          0.035,
+          0.11
+        ],
+        "n": 2835,
+        "tier": "weak",
+        "note": "barely significant, small effect"
+      },
+      "NTRK1": {
+        "rho": 0.034,
+        "ci": [
+          0.009,
+          0.059
+        ],
+        "n": 6038,
+        "tier": "weak",
+        "note": "barely significant, small effect"
+      },
+      "MET": {
+        "rho": -0.057,
+        "ci": [
+          -0.084,
+          -0.028
+        ],
+        "n": 4981,
+        "tier": "negative",
+        "note": "statistically significant NEGATIVE correlation -- genuine miscalibration for this target"
+      },
+      "STK11": {
+        "rho": null,
+        "n": 8,
+        "note": "n<10, skipped"
+      },
+      "NF1": {
+        "rho": null,
+        "n": 0,
+        "note": "no compounds found, skipped"
+      }
+    },
+    "sanity_check": "ECFP4 (structure-only, independent of embedding index) also drops sharply on the newly re-embedded missing-only subset (rho=0.124 vs 0.390 on the original in-index subset), confirming the pooled-rho reduction reflects genuine subpopulation difficulty, not a re-embedding artefact."
   }
 }
