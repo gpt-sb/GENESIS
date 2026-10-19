@@ -52,7 +52,7 @@ for rel in [
     "final_ranking/run_final_ranking.py",
     "documents/manuscript_ground_truth.json",
     "documents/verify_manuscript_numbers.py",
-    "README.md", "requirements.txt", "REPRODUCTION_PLAN.md", "LICENSE",
+    "README.md", "requirements.txt", "LICENSE",
 ]:
     check((ROOT / rel).exists(), rel, f"Missing: {ROOT / rel}")
 

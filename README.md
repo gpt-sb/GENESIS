@@ -53,8 +53,7 @@ GENESIS/
 ├── documents/             Manuscript ground-truth ledger, verifiers, figures
 ├── results/               ChEMBL extraction helper for cross-cancer transfer (§ below)
 ├── test_reproducibility.py  Environment/file-layout sanity check (run first)
-├── REPRODUCTION_PLAN.md   Step-by-step reproduction guide
-├── Algorithm_Design.md    PGCL algorithm reference
+├── Algorithm_Design.md    PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
 ├── requirements.txt
 └── LICENSE
 ```
@@ -120,7 +119,7 @@ This is intended to let reviewers check any specific number (e.g. the cross-canc
 
 ## Reproducing the Paper Results
 
-All commands auto-detect the best available device (`mps` / `cuda` / `cpu`). Use `--device cpu` to force CPU execution.
+All commands auto-detect the best available device (`mps` / `cuda` / `cpu`) internally; pass `--device cpu` to force CPU execution on the scripts that expose this flag (noted per-phase below). Phases without a `--device` flag have no CLI arguments at all and run as shown.
 
 ### Phase 0 — MolDeBERTa embedding extraction *(skip if Zenodo files downloaded)*
 ```bash
@@ -153,7 +152,7 @@ python generative/multiseed_gen.py --seeds 42 123 456 789 1337 --device mps
 
 ### Phase 4 — Bioactivity profiling
 ```bash
-python generative/evaluate_gen.py --device mps
+python generative/evaluate_gen.py
 # Expected: 5,416 unique molecules, 1,031 consensus hits, 14.6% safety PASS
 ```
 
