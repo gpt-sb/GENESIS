@@ -239,7 +239,7 @@ The PGCL framework is disease-agnostic; only the target list, positive/negative 
 
 ## Hardware
 
-Developed and benchmarked entirely on a single Apple MacBook Pro (M3, 18 GB RAM) using PyTorch's MPS backend. No GPU cluster or cloud compute was used at any stage.
+Developed and benchmarked entirely on a single Apple MacBook Pro (M3, 128 GB RAM) using PyTorch's MPS backend. No GPU cluster or cloud compute was used at any stage.
 
 ---
 
