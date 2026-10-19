@@ -1,0 +1,5 @@
+category	n_pathways	n_targets	targets	n_compounds
+Cell Cycle/Apoptosis	3	3	AKT1, MDM2, PIK3CA	50
+Inflammation/TME	4	1	PTGS2	44
+PI3K/AKT/mTOR Axis	5	5	AKT1, EGFR, FGFR1, MTOR, PIK3CA	50
+RTK/MAPK Cascade	4	2	EGFR, FGFR1	50

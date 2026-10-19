@@ -1,0 +1,6 @@
+smarts	source	n_matches_top	n_matches_top_pct	n_matches_vp	vp_rate	n_matches_inactive	inactive_rate	enrichment_ratio	count_in_candidates
+O=C1OCC=C1CCCCCCCCCCCCCC1CCC(C2CCCO2)O1	scaffold_repurposed	9	0.045	2	0.0004	0	0.0	400.00000000000006	9
+c1ccc(Nc2ncnc3ccccc23)cc1	scaffold_repurposed	40	0.2	376	0.0752	1	0.027777777777777776	2.7072000000000003	23
+c1ccc(-c2ccnn2-c2ccccc2)cc1	scaffold_repurposed	4	0.02	5	0.001	1	0.027777777777777776	0.036000000000000004	3
+O=C1OCC=C1CCCCCCCCCCCC1CCC(C2CCCO2)O1	scaffold_repurposed	3	0.015	0	0.0	0	0.0	0.0	3
+O=C1OCC=C1CCCCCCCCCC1CCC(C2CCCO2)O1	scaffold_repurposed	3	0.015	0	0.0	0	0.0	0.0	3

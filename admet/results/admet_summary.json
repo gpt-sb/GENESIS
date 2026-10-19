@@ -1,0 +1,54 @@
+{
+  "phase": 8,
+  "description": "ADMET & Pharmacokinetic Profiling with Mucosal Irritation Filter",
+  "n_compounds": 361,
+  "n_phase7b_compounds": 50,
+  "physicochemical": {
+    "lipinski_pass": 330,
+    "veber_pass": 331,
+    "ghose_pass": 252,
+    "egan_pass": 321,
+    "mean_qed": 0.654,
+    "mean_mw": 371.4,
+    "mean_logp": 3.69
+  },
+  "admet": {
+    "caco2_high": 253,
+    "caco2_moderate": 71,
+    "caco2_low": 37,
+    "bbb_permeable": 244,
+    "herg_high": 184,
+    "herg_moderate": 110,
+    "herg_low": 67,
+    "mean_cyp_flags": 0.06
+  },
+  "structural_alerts": {
+    "pains_flagged": 2,
+    "brenk_flagged": 117,
+    "toxicophore_flagged": 63,
+    "clean": 291
+  },
+  "mucosal_safety": {
+    "safe": 227,
+    "low": 5,
+    "moderate": 84,
+    "high": 45,
+    "amphiphilic_risk": 89,
+    "extreme_ph_risk": 4
+  },
+  "scoring": {
+    "mean_admet_score": 0.5039,
+    "median_admet_score": 0.5327,
+    "mean_final_score": 0.5059
+  },
+  "final_candidates": {
+    "admet_pass": 136,
+    "admet_caution": 180,
+    "admet_fail": 45,
+    "shortlist_size": 316
+  },
+  "triple_validated_elite": {
+    "count": 13,
+    "mean_final_score": 0.7535
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "total_jobs": 364,
+  "successful_docks": 361,
+  "failed_docks": 3,
+  "energy_stats": {
+    "mean": -7.86,
+    "median": -8.02,
+    "best": -11.21,
+    "worst": -3.5,
+    "sd": 1.29
+  },
+  "thresholds": {
+    "le_6": 330,
+    "le_7": 283,
+    "le_8": 183,
+    "le_9": 55,
+    "le_10": 16
+  },
+  "n_targets": 8,
+  "targets": [
+    "AKT1",
+    "EGFR",
+    "FGFR1",
+    "MDM2",
+    "MTOR",
+    "PIK3CA",
+    "PTGS2",
+    "STAT3"
+  ],
+  "n_multitarget_binders": 0,
+  "correlation": {
+    "spearman_rho": -0.201,
+    "spearman_p": 0.00012,
+    "pearson_r": -0.2448,
+    "pearson_p": 3e-06
+  },
+  "source_breakdown": {
+    "generated": {
+      "n": 200,
+      "mean_energy": -7.98
+    },
+    "repurposed": {
+      "n": 161,
+      "mean_energy": -7.71
+    }
+  },
+  "n_scaffolds_le8": 128,
+  "per_target": [
+    {
+      "target": "AKT1",
+      "pdb_id": "3CQW",
+      "n_docked": 9,
+      "mean_energy": -8.7,
+      "median_energy": -9.1,
+      "best_energy": -10.4,
+      "sd": 2.1,
+      "n_le_minus7": 8,
+      "n_le_minus8": 8,
+      "n_le_minus9": 5
+    },
+    {
+      "target": "EGFR",
+      "pdb_id": "4HJO",
+      "n_docked": 254,
+      "mean_energy": -8.1,
+      "median_energy": -8.2,
+      "best_energy": -11.0,
+      "sd": 1.0,
+      "n_le_minus7": 225,
+      "n_le_minus8": 150,
+      "n_le_minus9": 39
+    },
+    {
+      "target": "FGFR1",
+      "pdb_id": "4V04",
+      "n_docked": 21,
+      "mean_energy": -8.5,
+      "median_energy": -8.7,
+      "best_energy": -11.2,
+      "sd": 1.4,
+      "n_le_minus7": 18,
+      "n_le_minus8": 15,
+      "n_le_minus9": 8
+    },
+    {
+      "target": "MDM2",
+      "pdb_id": "4HG7",
+      "n_docked": 15,
+      "mean_energy": -6.5,
+      "median_energy": -6.8,
+      "best_energy": -8.1,
+      "sd": 1.1,
+      "n_le_minus7": 6,
+      "n_le_minus8": 1,
+      "n_le_minus9": 0
+    },
+    {
+      "target": "MTOR",
+      "pdb_id": "4DRH",
+      "n_docked": 19,
+      "mean_energy": -7.1,
+      "median_energy": -7.2,
+      "best_energy": -8.6,
+      "sd": 0.8,
+      "n_le_minus7": 12,
+      "n_le_minus8": 2,
+      "n_le_minus9": 0
+    },
+    {
+      "target": "PIK3CA",
+      "pdb_id": "4JPS",
+      "n_docked": 10,
+      "mean_energy": -8.2,
+      "median_energy": -8.2,
+      "best_energy": -9.3,
+      "sd": 0.9,
+      "n_le_minus7": 8,
+      "n_le_minus8": 6,
+      "n_le_minus9": 3
+    },
+    {
+      "target": "PTGS2",
+      "pdb_id": "3LN1",
+      "n_docked": 7,
+      "mean_energy": -7.6,
+      "median_energy": -7.8,
+      "best_energy": -8.2,
+      "sd": 0.5,
+      "n_le_minus7": 6,
+      "n_le_minus8": 1,
+      "n_le_minus9": 0
+    },
+    {
+      "target": "STAT3",
+      "pdb_id": "6NUQ",
+      "n_docked": 26,
+      "mean_energy": -5.5,
+      "median_energy": -5.6,
+      "best_energy": -6.7,
+      "sd": 0.8,
+      "n_le_minus7": 0,
+      "n_le_minus8": 0,
+      "n_le_minus9": 0
+    }
+  ],
+  "runtime_seconds": 2345.3,
+  "parameters": {
+    "exhaustiveness": 16,
+    "n_modes": 9,
+    "top_n_gen": 200,
+    "top_n_rep": 200,
+    "seed": 42
+  }
+}

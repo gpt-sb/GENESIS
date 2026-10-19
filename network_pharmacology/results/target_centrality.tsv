@@ -1,0 +1,8 @@
+target	degree_centrality	betweenness_centrality	closeness_centrality	n_neighbours
+AKT1	1.0	0.0	1.0	6
+EGFR	1.0	0.0	1.0	6
+FGFR1	1.0	0.0	1.0	6
+MDM2	1.0	0.0	1.0	6
+MTOR	1.0	0.0	1.0	6
+PIK3CA	1.0	0.0	1.0	6
+PTGS2	1.0	0.0	1.0	6

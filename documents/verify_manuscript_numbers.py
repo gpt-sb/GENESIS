@@ -16,6 +16,8 @@ def check(label, actual, expected, tol=1e-3):
     checks += 1
     if isinstance(expected, (int, float)) and isinstance(actual, (int, float)):
         ok = abs(actual - expected) <= tol
+    elif isinstance(expected, list) and isinstance(actual, list) and len(expected) == len(actual):
+        ok = all(abs(a - e) <= tol for a, e in zip(actual, expected))
     else:
         ok = actual == expected
     status = 'OK' if ok else 'MISMATCH'
@@ -50,7 +52,7 @@ def main():
     check('generative.crave_filtered.mean', gm['methods']['crave_filtered']['oscc_potency']['mean'],
           0.7712, tol=1e-3)
 
-    bio = json.load(open(ROOT.parent / 'BioactivityProfiling_Generative/profiling_summary.json'))
+    bio = json.load(open(ROOT / 'results/phase4_bioactivity_profiling/profiling_summary.json'))
     check('phase4.n_unique_molecules', bio['n_unique_molecules'],
           LEDGER['phase4_bioactivity_profiling']['n_unique_molecules'])
     check('phase4.safety_pass', bio['safety_summary']['pass'],

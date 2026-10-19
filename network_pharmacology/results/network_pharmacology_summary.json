@@ -1,0 +1,41 @@
+{
+  "phase": "9a",
+  "description": "Network Pharmacology & Pathway Analysis",
+  "n_compounds": 50,
+  "n_targets": 7,
+  "n_elite": 13,
+  "n_pathways_mapped": 16,
+  "n_pathway_categories": 4,
+  "target_network": {
+    "n_edges": 21,
+    "density": 1.0,
+    "mean_shared_binders": 44.0
+  },
+  "polypharmacology": {
+    "mean_targets_per_compound": 6.6,
+    "mean_polypharmacology_score": 58.7,
+    "elite_mean_poly_score": 55.6
+  },
+  "pathway_coverage": {
+    "top_pathway": "PI3K-AKT signalling (hsa04151)",
+    "top_pathway_hits": 50
+  },
+  "output_files": {
+    "data": [
+      "target_centrality.tsv",
+      "pathway_mapping.tsv",
+      "pathway_categories.tsv",
+      "compound_network_metrics.tsv",
+      "pathway_enrichment.tsv"
+    ],
+    "figures": [
+      "selectivity_heatmap.png",
+      "elite_selectivity_heatmap.png",
+      "target_correlation_heatmap.png",
+      "target_network.png",
+      "pathway_coverage.png",
+      "elite_radar_charts.png",
+      "multitarget_distribution.png"
+    ]
+  }
+}

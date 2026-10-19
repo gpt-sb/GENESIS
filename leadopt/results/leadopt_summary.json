@@ -1,0 +1,35 @@
+{
+  "phase": "9b",
+  "description": "Lead Optimization via Scaffold-Constrained Generation",
+  "device": "mps",
+  "elapsed_seconds": 75.5,
+  "n_elite": 13,
+  "perturbation_radii": [
+    0.3,
+    0.5,
+    0.8
+  ],
+  "samples_per_radius": 200,
+  "total_raw_analogs": 1877,
+  "total_unique_analogs": 890,
+  "admet_distribution": {
+    "PASS": 372,
+    "CAUTION": 493,
+    "FAIL": 25
+  },
+  "improved_analogs": 854,
+  "sar_entries": 854,
+  "scaffolds": {
+    "unique_murcko": 13,
+    "unique_generic": 12
+  },
+  "mean_tanimoto": 0.401,
+  "mean_admet_score": 0.861,
+  "output_files": [
+    "analogs_all.tsv",
+    "analogs_improved.tsv",
+    "scaffold_analysis.tsv",
+    "sar_table.tsv",
+    "leadopt_summary.json"
+  ]
+}

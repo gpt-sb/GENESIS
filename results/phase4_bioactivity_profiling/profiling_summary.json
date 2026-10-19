@@ -1,0 +1,168 @@
+{
+  "timestamp": "2026-09-16T19:54:13.015799",
+  "pipeline": "BioactivityProfiling_Generative",
+  "n_total_molecules": 7000,
+  "n_unique_molecules": 5416,
+  "n_methods": 6,
+  "methods": {
+    "CRAVE_unfiltered": 2000,
+    "CRAVE_filtered": 1000,
+    "RL_VAE": 1000,
+    "CGLF": 1000,
+    "cVAE": 1000,
+    "VAE": 1000
+  },
+  "n_targets_scored": 25,
+  "n_consensus_hits": 1031,
+  "n_enriched_smarts": 24,
+  "safety_summary": {
+    "pass": 1025,
+    "caution": 1074,
+    "fail": 4901
+  },
+  "score_stats": {
+    "composite": {
+      "mean": 0.5016419291496277,
+      "std": 0.4358752965927124,
+      "max": 0.8886412382125854,
+      "min": -0.7124364376068115
+    },
+    "recommendation_weight": {
+      "mean": 0.5897022818341009,
+      "std": 0.17398886640884842,
+      "max": 0.8103201663226974
+    }
+  },
+  "top10": [
+    {
+      "smiles": "COc1cccc2ncnc(Nc3cccc(Br)c3)c12",
+      "method": "CRAVE_unfiltered",
+      "recommendation_weight": 0.8103201663226974,
+      "composite_score": 0.8278617262840271,
+      "vp_similarity": 0.8484424352645874,
+      "predicted_pchembl": 7.798401355743408,
+      "qed": 0.7838293770479815,
+      "sa_score": 2.0099436468503242,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL119033",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "COc1cc2c(Nc3cccc(Br)c3)ncnc2cn1",
+      "method": "CRAVE_unfiltered",
+      "recommendation_weight": 0.8068445773124057,
+      "composite_score": 0.8252346515655518,
+      "vp_similarity": 0.8453367948532104,
+      "predicted_pchembl": 7.783298015594482,
+      "qed": 0.7954119437320261,
+      "sa_score": 2.2553762728450177,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL53062",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "CN(C)c1ccnc2ncnc(Nc3cccc(Br)c3)c12",
+      "method": "RL_VAE",
+      "recommendation_weight": 0.8051375277128267,
+      "composite_score": 0.8270129561424255,
+      "vp_similarity": 0.848494827747345,
+      "predicted_pchembl": 7.768884658813477,
+      "qed": 0.7868681517234083,
+      "sa_score": 2.456563620432169,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL96489",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "COc1ccnc2ncnc(Nc3cccc(Br)c3)c12",
+      "method": "RL_VAE",
+      "recommendation_weight": 0.8049931286061659,
+      "composite_score": 0.8193899393081665,
+      "vp_similarity": 0.8412047624588013,
+      "predicted_pchembl": 7.684885501861572,
+      "qed": 0.7954119437320261,
+      "sa_score": 2.2987242834550994,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL119033",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "CCC(=O)Nc1ncnc2ncnc(Nc3ccc(F)c(Cl)c3)c12",
+      "method": "RL_VAE",
+      "recommendation_weight": 0.8033419337824327,
+      "composite_score": 0.8259802460670471,
+      "vp_similarity": 0.8489874601364136,
+      "predicted_pchembl": 7.722967147827148,
+      "qed": 0.752545686790207,
+      "sa_score": 2.4988047496913772,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL3930316",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "COc1cc2ncnc(Nc3ccc(F)c(Cl)c3)c2cc1Nc1ccncn1",
+      "method": "CRAVE_unfiltered",
+      "recommendation_weight": 0.8028760999085609,
+      "composite_score": 0.821184515953064,
+      "vp_similarity": 0.8457357287406921,
+      "predicted_pchembl": 7.63898229598999,
+      "qed": 0.5049920933849995,
+      "sa_score": 2.450956262611381,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL301018",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "COc1cc2c(Nc3ccc(Br)cc3)ncnc2cn1",
+      "method": "CRAVE_unfiltered",
+      "recommendation_weight": 0.8028506645873872,
+      "composite_score": 0.8068944215774536,
+      "vp_similarity": 0.8312892913818359,
+      "predicted_pchembl": 7.499731063842773,
+      "qed": 0.7954119437320261,
+      "sa_score": 2.1933407290784395,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL53062",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "Nc1ncnc2ncnc(Nc3cccc(Br)c3)c12",
+      "method": "RL_VAE",
+      "recommendation_weight": 0.8028308698955519,
+      "composite_score": 0.8170018196105957,
+      "vp_similarity": 0.8371973037719727,
+      "predicted_pchembl": 7.698790550231934,
+      "qed": 0.7546729998537475,
+      "sa_score": 2.410291740727315,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL333418",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "CC(=O)Nc1ncnc2ncnc(Nc3ccc(F)c(Cl)c3)c12",
+      "method": "RL_VAE",
+      "recommendation_weight": 0.8023847742415912,
+      "composite_score": 0.825141966342926,
+      "vp_similarity": 0.8463308811187744,
+      "predicted_pchembl": 7.757011890411377,
+      "qed": 0.7657363278755168,
+      "sa_score": 2.483341666464959,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL3814257",
+      "parent_target": "Epidermal growth factor receptor"
+    },
+    {
+      "smiles": "Cc1cc(Nc2cccc(Br)c2)ncncncn1",
+      "method": "CRAVE_unfiltered",
+      "recommendation_weight": 0.8015067143406045,
+      "composite_score": 0.8278239965438843,
+      "vp_similarity": 0.8479859232902527,
+      "predicted_pchembl": 7.807795524597168,
+      "qed": 0.9210269151271424,
+      "sa_score": 2.785292154304015,
+      "overall_flag": "FAIL",
+      "parent_chembl_id": "CHEMBL3218347",
+      "parent_target": "Epidermal growth factor receptor"
+    }
+  ]
+}

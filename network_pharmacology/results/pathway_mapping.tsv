@@ -1,0 +1,17 @@
+pathway	category	n_targets	targets	n_compounds_hitting	pct_compounds
+PI3K-AKT signalling (hsa04151)	PI3K/AKT/mTOR Axis	5	AKT1, EGFR, FGFR1, MTOR, PIK3CA	50	100.0
+mTOR signalling (hsa04150)	PI3K/AKT/mTOR Axis	3	AKT1, MTOR, PIK3CA	50	100.0
+Apoptosis (hsa04210)	Cell Cycle/Apoptosis	3	AKT1, MDM2, PIK3CA	50	100.0
+FOXO signalling (hsa04068)	PI3K/AKT/mTOR Axis	2	AKT1, PIK3CA	50	100.0
+ErbB signalling (hsa04012)	RTK/MAPK Cascade	1	EGFR	50	100.0
+MAPK signalling (hsa04010)	RTK/MAPK Cascade	2	EGFR, FGFR1	50	100.0
+Ras signalling (hsa04014)	RTK/MAPK Cascade	2	EGFR, FGFR1	50	100.0
+Regulation of actin cytoskeleton (hsa04810)	RTK/MAPK Cascade	1	FGFR1	50	100.0
+p53 signalling (hsa04115)	Cell Cycle/Apoptosis	1	MDM2	49	98.0
+Cell cycle (hsa04110)	Cell Cycle/Apoptosis	1	MDM2	49	98.0
+Arachidonic acid metabolism (hsa00590)	Inflammation/TME	1	PTGS2	44	88.0
+NF-kappa B signalling (hsa04064)	Inflammation/TME	1	PTGS2	44	88.0
+VEGF signalling (hsa04370)	Inflammation/TME	1	PTGS2	44	88.0
+TNF signalling (hsa04668)	Inflammation/TME	1	PTGS2	44	88.0
+Autophagy (hsa04140)	PI3K/AKT/mTOR Axis	1	MTOR	36	72.0
+AMPK signalling (hsa04152)	PI3K/AKT/mTOR Axis	1	MTOR	36	72.0

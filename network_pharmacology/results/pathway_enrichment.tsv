@@ -1,0 +1,17 @@
+pathway	category	n_elite_hits	elite_rate	n_background_hits	background_rate	fold_enrichment
+Arachidonic acid metabolism (hsa00590)	Inflammation/TME	12	0.923	44	0.88	1.05
+NF-kappa B signalling (hsa04064)	Inflammation/TME	12	0.923	44	0.88	1.05
+VEGF signalling (hsa04370)	Inflammation/TME	12	0.923	44	0.88	1.05
+TNF signalling (hsa04668)	Inflammation/TME	12	0.923	44	0.88	1.05
+PI3K-AKT signalling (hsa04151)	PI3K/AKT/mTOR Axis	13	1.0	50	1.0	1.0
+mTOR signalling (hsa04150)	PI3K/AKT/mTOR Axis	13	1.0	50	1.0	1.0
+Apoptosis (hsa04210)	Cell Cycle/Apoptosis	13	1.0	50	1.0	1.0
+FOXO signalling (hsa04068)	PI3K/AKT/mTOR Axis	13	1.0	50	1.0	1.0
+ErbB signalling (hsa04012)	RTK/MAPK Cascade	13	1.0	50	1.0	1.0
+MAPK signalling (hsa04010)	RTK/MAPK Cascade	13	1.0	50	1.0	1.0
+Ras signalling (hsa04014)	RTK/MAPK Cascade	13	1.0	50	1.0	1.0
+Regulation of actin cytoskeleton (hsa04810)	RTK/MAPK Cascade	13	1.0	50	1.0	1.0
+Autophagy (hsa04140)	PI3K/AKT/mTOR Axis	9	0.692	36	0.72	0.96
+AMPK signalling (hsa04152)	PI3K/AKT/mTOR Axis	9	0.692	36	0.72	0.96
+p53 signalling (hsa04115)	Cell Cycle/Apoptosis	12	0.923	49	0.98	0.94
+Cell cycle (hsa04110)	Cell Cycle/Apoptosis	12	0.923	49	0.98	0.94
