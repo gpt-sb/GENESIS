@@ -15,7 +15,7 @@ All queries use parameterized SQL (no f-string interpolation).
 Outputs: CSV, JSON summary, optional Excel.
 
 Usage:
-    python Analysis/chembl_oscc_extractor_v2.py
+    python scripts/chembl_oscc_extractor_v2.py
 """
 
 import mysql.connector

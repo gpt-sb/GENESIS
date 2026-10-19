@@ -43,7 +43,7 @@ GENESIS/
 ├── generative/            VAE, cVAE, Diffusion, RL-VAE, CGLF, CRAVE (Phase 3)
 │   ├── checkpoints/       7 trained model files (~325MB total, via Zenodo -- see below)
 │   └── outputs/seed_42/   Raw generated SMILES, all 6 methods, canonical seed (Phase 3)
-├── scripts/               Embedding extraction, virtual screening enrichment (EF@K/BEDROC), Zenodo downloader
+├── scripts/               Embedding extraction, virtual screening enrichment (EF@K/BEDROC), ChEMBL extraction helper, Zenodo downloader
 ├── repurposing/           Drug repurposing screening (Phase 6) + results/
 ├── docking/               AutoDock Vina wrappers + receptor structures (Phase 7) + results/
 ├── admet/                 ADMET profiling with OSCC mucosal-safety filter (Phase 8) + results/
@@ -52,7 +52,7 @@ GENESIS/
 ├── final_ranking/         Integrated GENESIS-score ranking (Phase 10) + results/ (.tsv + .xlsx)
 ├── negatives/             6-tier negative taxonomy TSVs
 ├── documents/             Manuscript ground-truth ledger, verifiers, figures
-├── results/               Phase 4 bioactivity profiling, elite_candidates.tsv, COLUMNS.md (data dictionary), ChEMBL extraction helper
+├── results/               Phase 4 bioactivity profiling, elite_candidates.tsv, COLUMNS.md (data dictionary)
 ├── test_reproducibility.py  Environment/file-layout sanity check (run first)
 ├── Algorithm_Design.md    PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
 ├── requirements.txt
@@ -235,7 +235,7 @@ export CHEMBL_MYSQL_PASSWORD=your_password_here
 export CHEMBL_MYSQL_DB=chembl_36
 python modeling/baselines/cross_cancer_transfer_full_coverage.py --device mps
 ```
-If `CHEMBL_MYSQL_PASSWORD` is unset, the script fails fast with a clear error rather than attempting a doomed database connection. The same environment-variable pattern is used by `results/chembl_oscc_extractor_v2.py`.
+If `CHEMBL_MYSQL_PASSWORD` is unset, the script fails fast with a clear error rather than attempting a doomed database connection. The same environment-variable pattern is used by `scripts/chembl_oscc_extractor_v2.py`.
 
 ---
 
