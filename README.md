@@ -41,17 +41,18 @@ GENESIS/
 │   ├── validation/        Multi-seed checkpoints/logs, ablation results
 │   └── baselines/         Flat SupCon, BCE, ECFP4 k-NN, QSAR, cross-cancer transfer
 ├── generative/            VAE, cVAE, Diffusion, RL-VAE, CGLF, CRAVE (Phase 3)
-│   └── checkpoints/       7 trained model files (~325MB total, via Zenodo -- see below)
+│   ├── checkpoints/       7 trained model files (~325MB total, via Zenodo -- see below)
+│   └── outputs/seed_42/   Raw generated SMILES, all 6 methods, canonical seed (Phase 3)
 ├── scripts/               Embedding extraction, virtual screening enrichment (EF@K/BEDROC), Zenodo downloader
-├── repurposing/           Drug repurposing screening (Phase 6)
-├── docking/               AutoDock Vina wrappers + receptor structures (Phase 7)
-├── admet/                 ADMET profiling with OSCC mucosal-safety filter (Phase 8)
-├── network_pharmacology/  Pathway/network analysis (Phase 9a)
-├── leadopt/                Scaffold-constrained lead optimization (Phase 9b)
-├── final_ranking/         Integrated GENESIS-score ranking (Phase 10)
+├── repurposing/           Drug repurposing screening (Phase 6) + results/
+├── docking/               AutoDock Vina wrappers + receptor structures (Phase 7) + results/
+├── admet/                 ADMET profiling with OSCC mucosal-safety filter (Phase 8) + results/
+├── network_pharmacology/  Pathway/network analysis (Phase 9a) + results/
+├── leadopt/                Scaffold-constrained lead optimization (Phase 9b) + results/
+├── final_ranking/         Integrated GENESIS-score ranking (Phase 10) + results/ (.tsv + .xlsx)
 ├── negatives/             6-tier negative taxonomy TSVs
 ├── documents/             Manuscript ground-truth ledger, verifiers, figures
-├── results/               ChEMBL extraction helper for cross-cancer transfer (§ below)
+├── results/               Phase 4 bioactivity profiling, elite_candidates.tsv, COLUMNS.md (data dictionary), ChEMBL extraction helper
 ├── test_reproducibility.py  Environment/file-layout sanity check (run first)
 ├── Algorithm_Design.md    PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
 ├── requirements.txt
@@ -114,6 +115,17 @@ python documents/verify_manuscript_numbers.py
 ```
 
 This is intended to let reviewers check any specific number (e.g. the cross-cancer transfer ρ, or Table 1's baseline comparisons) against its raw source file in under a minute, without rerunning the full pipeline.
+
+---
+
+## Result Files
+
+Per-phase output tables (repurposing rankings, docking energies, ADMET profiles, network pharmacology, lead-optimization analogs, and the integrated final ranking) are included directly so reviewers can inspect actual study outputs without rerunning the pipeline:
+
+- **`results/elite_candidates.tsv`** — the 13 triple-validated elite compounds (docking + ADMET + selectivity concordant), the single most relevant "headline results" file.
+- **`results/COLUMNS.md`** — data dictionary explaining the non-obvious column names across all result tables below.
+- **`generative/outputs/seed_42/`** — raw generated SMILES for all 6 methods (canonical seed 42).
+- Per-phase `results/` subfolders under `repurposing/`, `docking/`, `admet/`, `leadopt/`, `network_pharmacology/`, and `final_ranking/` (the last also includes `.xlsx` spreadsheet versions).
 
 ---
 
