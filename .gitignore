@@ -13,7 +13,8 @@ generative/checkpoints/*.pt
 embeddings/
 
 # OS / editor
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 *.swp
 *.log

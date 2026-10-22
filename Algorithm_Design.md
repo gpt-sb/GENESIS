@@ -4445,7 +4445,7 @@ Phase 7/7b compounds (361)
   ├─ Module B: Physicochemical (MW, LogP, TPSA, QED, SA, Lipinski/Veber/Ghose/Egan)
   ├─ Module C: ADMET (Caco-2, BBB, PPB, CYP inhibition, hERG)
   ├─ Module D: Structural Alerts (PAINS, Brenk, 10 toxicophores, 9 extended)
-  ├─ Module E: Mucosal Irritation Filter (27 SMARTS alerts, amphiphilic index, pH risk)
+  ├─ Module E: Mucosal Irritation Filter (26 SMARTS alerts, amphiphilic index, pH risk)
   ├─ Module F: Integrated ADMET Scoring (weighted geometric mean of 6 components)
   └─ Module G: Final Candidate Shortlist → 13 triple-validated elite candidates
 ```
@@ -4453,7 +4453,7 @@ Phase 7/7b compounds (361)
 ### 20.3 Mucosal Irritation Filter (Novel)
 
 Unique to OSCC context — oral mucosal tissue is directly exposed to therapeutics.
-27 SMARTS-based structural alerts organized by mechanism:
+26 SMARTS-based structural alerts organized by mechanism:
 
 | Category | Alerts | Severity | Mechanism |
 |----------|--------|----------|----------|
@@ -4461,7 +4461,7 @@ Unique to OSCC context — oral mucosal tissue is directly exposed to therapeuti
 | ROS generators | 4 | S2–S3 | Oxidative mucosal damage |
 | Corrosive/pH-extreme | 4 | S1–S2 | Tissue corrosion, pH disruption |
 | Membrane disruptors | 2 | S1–S2 | Membrane solubilization |
-| Protein-reactive warheads | 6 | S1–S3 | Covalent keratin/cysteine modification |
+| Protein-reactive warheads | 5 | S1–S3 | Covalent keratin/cysteine modification |
 
 Risk classification:
 - **HIGH:** max_severity ≥ 3 OR severity_sum ≥ 5
