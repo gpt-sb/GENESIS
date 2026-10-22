@@ -269,4 +269,8 @@ See `CITATION.cff`.
 
 ## License
 
-MIT — see `LICENSE`.
+This repository is dual-licensed:
+- **Code** (all `.py` files, pipeline/training/evaluation scripts) — MIT License, see [LICENSE](LICENSE).
+- **Data and results** (`data/`, `negatives/`, all `results/` directories, generative outputs, manuscript ledger) — Creative Commons Attribution 4.0 International (CC BY 4.0), see [LICENSE-DATA](LICENSE-DATA). You are free to share and adapt this data for any purpose, including commercially, provided you give appropriate credit.
+
+Large files hosted on Zenodo (pre-computed embeddings, generative-method checkpoints) are licensed CC BY 4.0 — see the Zenodo record metadata.

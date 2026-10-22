@@ -5,7 +5,9 @@ authors:
   - family-names: "Bundela"
     given-names: "Saurabh"
 date-released: 2026-09-18
-license: MIT
+license:
+  - MIT
+  - CC-BY-4.0
 repository-code: "https://github.com/gpt-sb/GENESIS"
 version: 1.0.0
 identifiers:
