@@ -3076,7 +3076,7 @@ for this setting (§10.13 root cause analysis).
 
 ### 13.1 Motivation
 
-CRAVE (Contrastive-Regularized Augmented Variational Explorer) synthesizes lessons from
+CRAVE (Contrastive Reward-Aligned VAE Exploration) synthesizes lessons from
 all previous methods to maximize compound quality through three phases:
 
 1. **Second-round RL** with boosted potency weight (55% vs 40%)
@@ -4349,7 +4349,7 @@ GENESIS/docking/
 | **CFG** | Classifier-Free Guidance — interpolates conditioned/unconditioned predictions |
 | **CFM** | Conditional Flow Matching — trains velocity field for ODE-based generation |
 | **CGLF** | Contrastive-Guided Latent Flow — novel method combining flow matching with VP guidance |
-| **CRAVE** | Contrastive-Regularized Augmented Variational Explorer — enhanced RL ensemble |
+| **CRAVE** | Contrastive Reward-Aligned VAE Exploration — enhanced RL ensemble |
 | **DDPM** | Denoising Diffusion Probabilistic Model (Ho et al., 2020) |
 | **ELBO** | Evidence Lower Bound — variational inference objective |
 | **EMA** | Exponential Moving Average — parameter smoothing technique |
