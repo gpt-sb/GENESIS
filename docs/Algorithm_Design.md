@@ -66,7 +66,7 @@ for all algorithms used in the GENESIS study.*
 5. [Phase 2 — Potency-Graded Contrastive Learning](#5-phase-2--potency-graded-contrastive-learning)
 6. [Phase 3.1 — SELFIES Data Preparation](#6-phase-31--selfies-data-preparation)
 7. [Phase 3.2 — VP Centroid Computation](#7-phase-32--vp-centroid-computation)
-   - 7.5 [Compound Landscape & Generative Training Bias](#75-compound-landscape--generative-training-bias)
+   - 7.6 [Compound Landscape & Generative Training Bias](#76-compound-landscape--generative-training-bias)
 8. [Phase 3.3 — Variational Autoencoder (VAE)](#8-phase-33--variational-autoencoder-vae)
 9. [Phase 3.4 — Conditional VAE (cVAE)](#9-phase-34--conditional-vae-cvae)
 10. [Phase 3.5 — Latent Diffusion Model](#10-phase-35--latent-diffusion-model)
@@ -77,11 +77,11 @@ for all algorithms used in the GENESIS study.*
 15. [Design Decision Registry](#15-design-decision-registry)
 16. [Parameter Summary Tables](#16-parameter-summary-tables)
 17. [Phase 6 — Drug Repurposing of CompoundList Compounds](#17-phase-6--drug-repurposing-of-compoundlist-compounds)
+18. [Phase 7 — Molecular Docking Validation](#18-phase-7--molecular-docking-validation)
+    - Phase 7b — Multi-Target Docking Validation (§18.15, nested within Phase 7)
+20. [Phase 8 — ADMET & Pharmacokinetic Profiling](#20-phase-8--admet--pharmacokinetic-profiling)
 21. [Phase 9a — Network Pharmacology & Pathway Analysis](#21-phase-9a--network-pharmacology--pathway-analysis)
 22. [Phase 9b — Lead Optimization via Scaffold-Constrained Generation](#22-phase-9b--lead-optimization-via-scaffold-constrained-generation)
-18. [Phase 7 — Molecular Docking Validation](#18-phase-7--molecular-docking-validation)
-19. [Phase 7b — Multi-Target Docking Validation](#19-phase-7b--multi-target-docking-validation)
-20. [Phase 8 — ADMET & Pharmacokinetic Profiling](#20-phase-8--admet--pharmacokinetic-profiling)
 23. [Phase 10 — Nearest Known Analog Analysis & Final Compound Ranking](#23-phase-10--nearest-known-analog-analysis--final-compound-ranking)
 24. [Phase 10b — Molecular Dynamics Simulations (In Progress)](#24-phase-10b--molecular-dynamics-simulations-in-progress)
 25. [Phase 10c — Compound Category Annotation & Repurposing Potential](#25-phase-10c--compound-category-annotation--repurposing-potential)
@@ -109,18 +109,30 @@ approach to drug discovery that can simultaneously consider:
 
 ### 1.2 Computational Strategy
 
-GENESIS implements a four-phase pipeline:
+GENESIS implements an eleven-phase pipeline (Phase 0 through Phase 10):
 
 ```
-Phase 0: Molecular Embedding   (MolDeBERTa, 123M params, SMILES → 768-d)
+Phase 0: Molecular Embedding    (MolDeBERTa, 88.2M params, SMILES → 768-d)
      ↓
-Phase 1: Data Preparation       (Negative mining, tier stratification)
+Phase 1: Data Preparation        (Negative mining, tier stratification)
      ↓
-Phase 2: Contrastive Learning   (768-d → 128-d, potency-aware clustering)
+Phase 2: Contrastive Learning    (768-d → 128-d, potency-aware clustering)   ← PGCL core contribution
      ↓
-Phase 3: Generative Modeling    (6 methods: VAE, cVAE, Diffusion, RL, CGLF, CRAVE)
+Phase 3: Generative Modeling     (6 methods: VAE, cVAE, Diffusion, RL-VAE, CGLF, CRAVE)
      ↓
-Phase 4: Bioactivity Profiling  (Screening, filtering, candidate ranking)
+Phase 4: Bioactivity Profiling   (Screening, filtering, candidate ranking)
+     ↓
+Phase 5: Baselines & Ablations   (Flat SupCon / BCE comparisons, cross-cancer transfer)
+     ↓
+Phase 6: Drug Repurposing        (23,308 known-compound screening)
+     ↓
+Phase 7/7b: Molecular Docking    (Single-target + multi-target structure-based validation)
+     ↓
+Phase 8: ADMET Profiling         (Pharmacokinetic & mucosal-safety filtering)
+     ↓
+Phase 9a/9b: Network Pharmacology & Lead Optimization (pathway mapping, scaffold-constrained analogs)
+     ↓
+Phase 10: Final Ranking          (Integration & prioritization layer)
 ```
 
 The key insight is that raw molecular embeddings from pre-trained language models
@@ -129,7 +141,11 @@ contrastive learning phase (Phase 2) reshapes this 768-dimensional space into a 
 space where potency-relevant relationships become geometrically explicit: very potent
 OSCC compounds cluster together, and the distance to this cluster's centroid directly
 encodes predicted potency. The generative phase (Phase 3) then operates in this
-semantically-rich space to produce novel drug candidates.
+semantically-rich space to produce novel drug candidates. Phases 5–10 form a
+translational validation and prioritization layer: comparative baselines, drug
+repurposing, structure-based docking, ADMET/safety profiling, pathway-level
+contextualization, lead optimization, and finally an integrated ranking across every
+evidence stream (see §23).
 
 ### 1.3 Key Innovation
 
@@ -151,9 +167,9 @@ from the actual drug discovery objective.
 │  GENESIS Pipeline                                                     │
 │                                                                       │
 │  ┌─────────────────┐                                                  │
-│  │ MolDeBERTa       │ ← Pre-trained (SaeedLab, 123M params)          │
-│  │ 88.2M params     │                                                 │
-│  │ SMILES → 768-d   │                                                 │
+│  │ MolDeBERTa       │ ← Pre-trained (SaeedLab/MolDeBERTa-base-123M-mtr)│
+│  │ 88.2M params     │   ("123M" is part of the HF model name, not the │
+│  │ SMILES → 768-d   │    actual parameter count -- see §3.1)          │
 │  └────────┬─────────┘                                                 │
 │           │ compound_embeddings.mmap (715,162 × 768, float16)         │
 │           ▼                                                           │
@@ -2270,7 +2286,7 @@ $$R_{\text{potency}}(\mathbf{x}) = \cos\left(f_\theta(\text{MolDeBERTa}(\text{SM
 This is the full inference pipeline:
 1. Decode SELFIES tokens to SMILES
 2. Tokenize SMILES with MolDeBERTa tokenizer (`use_fast=False`)
-3. Forward pass through MolDeBERTa (123M params) → 768-d [CLS] embedding
+3. Forward pass through MolDeBERTa (88.2M params) → 768-d [CLS] embedding
 4. Forward pass through ContrastiveModel projection head → 128-d L2-normalized
 5. Cosine similarity to VP centroid → scalar reward ∈ [0, 1]
 
@@ -2430,7 +2446,7 @@ dramatically sharpening the gradient.
 
 **Why REINFORCE is appropriate here**:
 1. **Computational budget**: Each reward evaluation requires a full MolDeBERTa forward pass
-   (123M params, ~180s/epoch on M3). PPO and TRPO would require 2-3× more forward passes per
+   (88.2M params, ~180s/epoch on M3). PPO and TRPO would require 2-3× more forward passes per
    update step, making the training loop 5–10× slower.
 2. **Episode structure**: Each molecule is a complete episode. There is no Markov state to
    estimate (the molecule has no intermediate "value"), ruling out actor-critic methods.
@@ -3806,7 +3822,7 @@ CGLF's Fragment similarity of 0.921±0.009 on 34.4K compounds recovers a large s
 
 | Decision | Choice | Alternatives Considered | Rationale |
 |----------|--------|-------------------------|-----------|
-| Embedding model | MolDeBERTa-123M | ChemBERTa, MolBERT, Mol2Vec | Best [CLS] quality for drug-like SMILES |
+| Embedding model | MolDeBERTa (88.2M params) | ChemBERTa, MolBERT, Mol2Vec | Best [CLS] quality for drug-like SMILES |
 | Tokenizer | `use_fast=False` | Fast tokenizer | Fast tokenizer produces incorrect tokenization |
 | Projection dim | 128 | 64, 256, 512 | Matches VAE latent dim; sufficient for ~200K compounds |
 | L2 normalization | Yes | No normalization | Required for temperature-scaled contrastive loss |
@@ -4607,7 +4623,7 @@ This generates analogs localized around the elite compound's position in the lea
 
 ### 22.2 Encoding Pipeline
 
-1. **MolDeBERTa** (123M params): SMILES → [CLS] token → 768-d embedding
+1. **MolDeBERTa** (88.2M params): SMILES → [CLS] token → 768-d embedding
 2. **ContrastiveModel** (Phase 2): 768-d → 128-d projection, trained with potency-graded contrastive loss
 3. **Gaussian perturbation**: sample around $z_{elite}$ at 3 radii
 4. **CRAVE decoder**: 128-d → GRU → SELFIES tokens → SMILES
