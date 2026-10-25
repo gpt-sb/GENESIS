@@ -2,6 +2,14 @@
 
 **Generative Exploration of Novel Entities for Selective Inhibitor Synthesis**
 
+> **Supplementary reference, not required reading.** This document is an optional,
+> deep-dive design rationale supplementing the manuscript's Methods section —
+> theoretical foundations, architecture justifications, parameter choices, and
+> development-history notes (including self-identified corrections from earlier
+> drafts, retained here for process transparency). Nothing in the reproducibility
+> pipeline depends on this file; see the main [README.md](../README.md) for
+> everything needed to reproduce the study's results.
+
 *Master reference document covering theoretical foundations, mathematical formulations,
 architecture design, implementation decisions, parameter choices, and biological context
 for all algorithms used in the GENESIS study.*
@@ -4427,7 +4435,8 @@ GENESIS/
 ├── results/
 │   ├── phase0_embeddings.md        through phase8_admet_profiling.md
 │   └── ...
-└── Algorithm_Design.md             ← This document
+└── docs/
+    └── Algorithm_Design.md          ← This document
 ```
 
 ## 20. Phase 8 — ADMET & Pharmacokinetic Profiling

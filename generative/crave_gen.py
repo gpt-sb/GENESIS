@@ -11,7 +11,7 @@ Three-phase pipeline building on the RL-VAE checkpoint:
   Phase 3: Chemistry-aware Pareto filtering with canonical SMILES dedup
            and a composite scoring function distinct from the RL reward.
 
-Empirical baselines from multi-seed evaluation (see Algorithm_Design.md §14.4):
+Empirical baselines from multi-seed evaluation (see docs/Algorithm_Design.md §14.4):
   - VAE:       pot=0.526, qed=0.450, div=0.918, uniq=98.2%
   - cVAE:      pot=0.514, qed=0.409, div=0.915, uniq=98.2%
   - RL-VAE:    pot=0.570, qed=0.753, div=0.886, uniq=96.9%  ← best overall
@@ -152,7 +152,7 @@ class EnhancedReward:
       - Validity 20% → 15%: the RL-VAE warm-start already produces ~97%
         valid molecules, so less gradient budget is needed here.
     Note: the checkpoint composite used for early stopping uses yet another
-    weighting (40/25/10/25) — see Algorithm_Design.md §13.4 for the
+    weighting (40/25/10/25) — see docs/Algorithm_Design.md §13.4 for the
     three-scoring-functions design.
     """
     def __init__(self, potency_scorer, potency_w=0.55, qed_w=0.20,
@@ -542,7 +542,7 @@ def main():
         # the frozen prior never receives gradient updates, so the KL term
         # measures cumulative drift from the RL-VAE starting point.  This is
         # the architectural mechanism that makes KL *active* in CRAVE (vs
-        # dead code in rl_finetune.py — see Algorithm_Design.md §13.2).
+        # dead code in rl_finetune.py — see docs/Algorithm_Design.md §13.2).
         prior_model = copy.deepcopy(model).eval()
         for p_param in prior_model.parameters():
             p_param.requires_grad = False

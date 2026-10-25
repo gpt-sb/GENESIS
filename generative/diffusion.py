@@ -4,7 +4,7 @@ Phase 3, Steps 6-7 — Latent Diffusion Model for Molecular Generation.
 
 **CRITICAL NEGATIVE FINDING**: This is the worst-performing method in the
 GENESIS pipeline. Mode collapse on 2/3 random seeds produces uniqueness
-as low as 10.1% and even negative potency. See Algorithm_Design.md §10.13
+as low as 10.1% and even negative potency. See docs/Algorithm_Design.md §10.13
 for full root-cause analysis. The failure is data-regime-dependent: latent
 diffusion requires 10–100× more training data than GENESIS's 34K compounds.
 

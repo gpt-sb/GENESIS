@@ -54,7 +54,8 @@ GENESIS/
 ├── documents/             Manuscript ground-truth ledger, verifiers, figures
 ├── results/               Phase 4 bioactivity profiling, elite_candidates.tsv, COLUMNS.md (data dictionary)
 ├── test_reproducibility.py  Environment/file-layout sanity check (run first)
-├── Algorithm_Design.md    PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
+├── docs/
+│   └── Algorithm_Design.md PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
 ├── requirements.txt
 └── LICENSE
 ```
