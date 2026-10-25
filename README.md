@@ -29,6 +29,10 @@ The pipeline spans 11 phases, reproducible on a single consumer machine (Apple M
 
 **Key results** (this run, seed 42 unless noted): Spearman ρ = 0.555 ± 0.003 for potency ordering (3-seed); frozen model transfers to lung adenocarcinoma without retraining (full-coverage pooled ρ = 0.207, n = 52,373 across 14 assessable targets, strongly along the PI3K/AKT/mTOR axis); 5,416 unique generated molecules; 316 recommended compounds, 46 Tier-1 fully-validated candidates, 13 triple-validated elite structures; 23,308 repurposing candidates screened.
 
+![GENESIS graphical abstract: PGCL unifies six generative architectures (VAE, cVAE, Diffusion, RL-VAE, CGLF, CRAVE), with coupling depth and architectural lineage shown](docs/images/Fig_GENESIS_Graphical_Abstract.png)
+
+*PGCL (ordinal potency-weighted contrastive learning) is the shared representation-learning foundation for six generative architectures; vertical arrows show each method's coupling depth to PGCL, stepped arrows show architectural lineage. ★ marks the study's novel contributions. See [docs/Algorithm_Design.md](docs/Algorithm_Design.md) for full derivations.*
+
 ---
 
 ## Repository Structure
@@ -55,7 +59,8 @@ GENESIS/
 ├── results/               Phase 4 bioactivity profiling, elite_candidates.tsv, COLUMNS.md (data dictionary)
 ├── test_reproducibility.py  Environment/file-layout sanity check (run first)
 ├── docs/
-│   └── Algorithm_Design.md PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
+│   ├── Algorithm_Design.md PGCL algorithm/architecture reference (optional reading -- not required to reproduce results)
+│   └── images/Fig_GENESIS_Graphical_Abstract.png  Methods overview figure shown above
 ├── requirements.txt
 └── LICENSE
 ```

@@ -12,6 +12,12 @@ generative/checkpoints/*.pt
 # Pre-computed MolDeBERTa embeddings hosted on Zenodo (~1.4GB, not tracked)
 embeddings/
 
+# Local-only illustrative/meta diagrams (not part of the reproducibility
+# pipeline or the manuscript) -- generator script may be tracked, outputs are not.
+# The graphical abstract is the one approved exception, tracked for README.md.
+docs/images/*.png
+!docs/images/Fig_GENESIS_Graphical_Abstract.png
+
 # OS / editor
 .vscode/*
 !.vscode/settings.json
