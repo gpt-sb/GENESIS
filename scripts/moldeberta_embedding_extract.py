@@ -9,7 +9,7 @@ MolDeBERTa Embedding Extraction Script for GENESIS
 - Logs meta and progress as JSON
 - Batches for memory efficiency, logs time for major steps
 
-Author: [Your Name]
+Author: [Saurabh]
 Date: 2026-03-21
 """
 
