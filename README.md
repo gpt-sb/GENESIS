@@ -213,11 +213,6 @@ python final_ranking/run_final_ranking.py
 # Expected: 316 recommended compounds, 46 Tier-1, top hit OMIPALISIB
 ```
 
-### Figures
-```bash
-python scripts/create_all_paper_figures.py
-```
-
 ---
 
 ## Reproducing the Cross-Cancer Transfer (OSCC→LUAD) Result
