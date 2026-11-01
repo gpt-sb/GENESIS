@@ -14,47 +14,6 @@
 architecture design, implementation decisions, parameter choices, and biological context
 for all algorithms used in the GENESIS study.*
 
-> **Note on numeric results (2026-09-19, final update, second pass)**: This document's
-> algorithm, architecture, and loss-function descriptions have been reviewed and
-> corrected against the current implementation (see the checkpoint-selection fix in
-> §5.3.2 and the Bug Fixes registry in §15.3). The per-phase result numbers in §17
-> (repurposing), §18 (docking), §20 (ADMET), §21 (network pharmacology), §22 (lead
-> optimization), §23 (final ranking), §14.4 (MOSES/GuacaMol generative
-> benchmarks), and §25 (compound category annotation) have all been individually
-> re-queried or recomputed against current result files and corrected in place,
-> including several qualitative reversals from the earlier report that are called
-> out explicitly where they occur rather than silently overwritten (e.g., generated
-> vs. repurposed docking comparison in §18.7, the safety-potency relationship in
-> §18.13/§20.7, CGLF's scaffold-fidelity claim in §14.4.6).
->
-> **A second, deeper pass (2026-09-19)** discovered that §§8–13's per-method "Novelty
-> Assessment & Empirical Validation" subsections, and the master Table 3 in §14.4.1,
-> still cited the *original* pre-correction, 3-seed {42,123,456} generative evaluation
-> (dated 2026-03-25 in the earlier draft) rather than the current, corrected 5-seed
-> {42,123,456,789,1337} evaluation. All of §§8.11.2, 9.9.2, 10.13.1, 10.13.4, 11.11.2,
-> 11.11.3, 12.12.2, 13.8, 13.11.1, 13.11.2, and 14.4.1–14.4.5 have now been rewritten
-> against the 5-seed data. This surfaced three qualitative reversals that are
-> explicitly retracted/reframed rather than silently patched: cVAE's claimed
-> "statistically significant potency improvement over VAE" does not hold under the
-> corrected variance (§9.9.2); CGLF's claimed "best SA score of all methods" is
-> reversed — CGLF's QED/SA are now worse than the VAE baseline (§12.12.2); and
-> CRAVE's headline "seed-invariant, SD=0.000" claim does not hold under the full
-> 5-seed set (true SD=0.033) — CRAVE still has the lowest *relative* variance
-> (coefficient of variation) among potency-directed methods, but is not
-> deterministic (§13.11.1). §25's category-annotation results were also stale
-> (pre-dating the checkpoint fix) and have been rerun and corrected in place.
->
-> §14.4.6's MOSES/GuacaMol/FCD benchmarks are now fully 3-seed (42/123/456)
-> mean ± SD, including FCD — installing the `fcd` package turned out to be cheap (a
-> PyTorch-based reimplementation with no new heavy dependencies), so the earlier
-> "genuinely open, needs new infrastructure" assessment for FCD did not hold up
-> either; it only took actually attempting the install to find that out. This
-> 3-seed external-benchmark evaluation is intentionally separate from, and does not
-> need to match, the 5-seed internal Table 3 evaluation above.
-> `documents/manuscript_ground_truth.json`, together with
-> `documents/verify_manuscript_numbers.py`, remains the authoritative,
-> independently re-derivable source for current result numbers.
-
 ---
 
 ## Table of Contents
