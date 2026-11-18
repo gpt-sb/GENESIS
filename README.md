@@ -171,8 +171,15 @@ python generative/multiseed_gen.py --seeds 42 123 456 789 1337 --device mps
 ### Phase 4 — Bioactivity profiling
 ```bash
 python generative/evaluate_gen.py
-# Expected: 5,416 unique molecules, 1,031 consensus hits, 14.6% safety PASS
+# Runtime: ~2 min | Output: generative/results/eval_{method}.json
+# (per-method validity/uniqueness/novelty/QED/SA metrics for each of the 6 generative methods)
 ```
+Cross-method consensus scoring, safety profiling, and candidate ranking across all 7,000
+generated molecules (5,416 unique, 1,031 consensus hits, 14.6% safety PASS) are provided
+as precomputed results in `results/phase4_bioactivity_profiling/` rather than regenerated
+by the command above — the consensus-scoring pipeline is an internal component not
+included in this repository. Verify these numbers directly against their source file via
+`python documents/verify_manuscript_numbers.py` (see [Verifying the Reported Numbers](#verifying-the-reported-numbers)).
 
 ### Phase 5 — Baselines and ablations
 ```bash

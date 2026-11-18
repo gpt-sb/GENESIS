@@ -12,9 +12,18 @@ Dependencies:
     pip install vina meeko rdkit-pypi requests pandas numpy scipy
 
 Input:
-    - BioactivityProfiling_Generative/final_dossier.tsv   (Phase 4)
-    - GENESIS/repurposing/results/final_dossier.tsv       (Phase 6)
+    - results/phase4_bioactivity_profiling/top100_candidates.tsv   (Phase 4)
+    - repurposing/results/top100_candidates.tsv                     (Phase 6)
     - PDB structures: 3CQW, 4HJO, 4V04, 4HG7, 4DRH, 4JPS, 3LN1, 6NUQ
+
+Note: the original paper run drew candidates from larger, internal per-method
+dossiers (~1,000 molecules/method) that are not included in this repository;
+the committed top100_candidates.tsv files (top 100 by recommendation_weight)
+are a strict subset, so a from-scratch rerun selects from a smaller pool than
+the paper's exact 364-candidate selection and will not be bit-identical to
+docking/results/docking_results.tsv. Use that committed file plus
+documents/verify_manuscript_numbers.py to verify the reported docking numbers
+without rerunning this script.
 
 Output:
     - GENESIS/docking/results/docking_results.tsv
@@ -50,9 +59,11 @@ POSES_DIR   = DOCK_DIR / "poses"
 # Source PDB files (from previous docking run, or freshly downloaded)
 PDB_CACHE   = Path(__file__).resolve().parent.parent.parent / "repurposing" / "docking" / "receptors"
 
-# Input dossiers
-PHASE4_DOSSIER = ROOT.parent / "BioactivityProfiling_Generative" / "final_dossier.tsv"
-PHASE6_DOSSIER = ROOT / "repurposing" / "results" / "final_dossier.tsv"
+# Input dossiers -- top100_candidates.tsv (not the paper's full internal
+# dossier, see module docstring) are the largest candidate pools tracked in
+# this repository.
+PHASE4_DOSSIER = ROOT / "results" / "phase4_bioactivity_profiling" / "top100_candidates.tsv"
+PHASE6_DOSSIER = ROOT / "repurposing" / "results" / "top100_candidates.tsv"
 
 # Output files
 DOCK_RESULTS    = RESULTS_DIR / "docking_results.tsv"
@@ -316,6 +327,16 @@ def load_candidates():
     print("\n" + "=" * 70)
     print("PHASE B: Candidate Selection")
     print("=" * 70)
+
+    for dossier in (PHASE4_DOSSIER, PHASE6_DOSSIER):
+        if not dossier.exists():
+            raise FileNotFoundError(
+                f"Missing candidate dossier: {dossier}\n"
+                "Run Phase 4 (generative/evaluate_gen.py) and Phase 6 "
+                "(repurposing/run_drug_repurposing.py) first, or use the "
+                "committed docking/results/docking_results.tsv directly -- "
+                "see README.md 'Reproducing the Paper Results'."
+            )
 
     candidates = []
 
