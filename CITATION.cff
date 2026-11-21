@@ -14,6 +14,9 @@ identifiers:
   - type: doi
     value: "10.5281/zenodo.23393588"
     description: "Zenodo archive of pre-computed embeddings and model checkpoints"
+  - type: doi
+    value: "10.26434/chemrxiv.15012518/v1"
+    description: "ChemRxiv preprint"
 keywords:
   - drug discovery
   - contrastive learning

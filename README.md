@@ -3,6 +3,7 @@
 **GENESIS** is an end-to-end computational drug discovery pipeline for oral squamous cell carcinoma (OSCC) that integrates ordinal contrastive representation learning (PGCL), multi-method molecular generation, structure-based docking, ADMET/network-pharmacology profiling, and drug repurposing screening.
 
 > **Paper**: "GENESIS: Potency-Graded Contrastive Learning for Generative Molecular Design and Drug Repurposing in Oral Squamous Cell Carcinoma"
+> Preprint: [ChemRxiv, doi.org/10.26434/chemrxiv.15012518/v1](https://chemrxiv.org/doi/full/10.26434/chemrxiv.15012518/v1)
 > GitHub: [github.com/gpt-sb/GENESIS](https://github.com/gpt-sb/GENESIS)
 
 Every numeric claim in the paper is traced to a specific result file in this repository and can be independently re-derived — see [Verifying the Reported Numbers](#verifying-the-reported-numbers) below.
